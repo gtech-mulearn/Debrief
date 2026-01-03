@@ -1,17 +1,28 @@
 /**
- * Supabase Client - Browser/Client Components
+ * Supabase Browser Client
  * 
- * Uses the PUBLISHABLE key only - safe for client-side usage.
- * This client respects RLS policies and is tied to the user's session.
+ * Creates a Supabase client for use in Client Components.
+ * This client handles authentication state and session management.
  */
 
 import { createBrowserClient } from "@supabase/ssr";
-import type { Database } from "@/types/database";
-import { env } from "@/lib/env";
+
+// Read env vars directly to avoid import issues
+function getSupabaseConfig() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  
+  if (!url || !key) {
+    throw new Error(
+      "Missing Supabase environment variables. " +
+      "Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env.local"
+    );
+  }
+  
+  return { url, key };
+}
 
 export function createClient() {
-  return createBrowserClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  );
+  const config = getSupabaseConfig();
+  return createBrowserClient(config.url, config.key);
 }

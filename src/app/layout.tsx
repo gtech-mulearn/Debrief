@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Poppins } from "next/font/google";
+import { QueryProvider } from "@/providers";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -31,7 +33,10 @@ export default function RootLayout({
       <body
         className={`${bricolage.variable} ${poppins.variable} antialiased`}
       >
-        {children}
+        <QueryProvider>
+          {children}
+          <Toaster />
+        </QueryProvider>
       </body>
     </html>
   );

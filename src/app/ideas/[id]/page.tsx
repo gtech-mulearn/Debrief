@@ -6,14 +6,14 @@
 
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIdea, useVote, useRemoveVote, useComments, useCreateComment, useAuth } from "@/hooks";
 import { formatDistanceToNow, getInitials } from "@/lib/utils";
-import { useState } from "react";
 import { toast } from "sonner";
 
 interface IdeaPageProps {
@@ -22,14 +22,39 @@ interface IdeaPageProps {
 
 export default function IdeaPage({ params }: IdeaPageProps) {
     const { id } = use(params);
+
+    // Redirect if ID is invalid
+    if (!id || id === "undefined") {
+        return (
+            <>
+                <Header />
+                <main className="mx-auto max-w-7xl px-6 py-8">
+                    <div className="flex flex-col items-center justify-center rounded-[2rem] border border-dashed border-border bg-card/50 p-12 text-center">
+                        <p className="font-display text-xl font-semibold text-foreground">Invalid idea</p>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            This link appears to be broken.
+                        </p>
+                        <Button variant="mint" size="pill" asChild className="mt-6">
+                            <a href="/">Go home</a>
+                        </Button>
+                    </div>
+                </main>
+            </>
+        );
+    }
+
+    return <IdeaPageContent id={id} />;
+}
+
+function IdeaPageContent({ id }: { id: string }) {
     const { data, isLoading, isError, error } = useIdea(id);
-    const { user, isAuthenticated } = useAuth();
+    const { user, isAuthenticated, loading: authLoading } = useAuth();
 
     if (isLoading) {
         return (
             <>
                 <Header />
-                <main className="main-container">
+                <main className="mx-auto max-w-7xl px-6 py-8">
                     <IdeaDetailSkeleton />
                 </main>
             </>
@@ -40,13 +65,13 @@ export default function IdeaPage({ params }: IdeaPageProps) {
         return (
             <>
                 <Header />
-                <main className="main-container">
-                    <div className="empty-state">
-                        <p className="empty-state-title">Idea not found</p>
-                        <p className="empty-state-description">
+                <main className="mx-auto max-w-7xl px-6 py-8">
+                    <div className="flex flex-col items-center justify-center rounded-[2rem] border border-dashed border-border bg-card/50 p-12 text-center">
+                        <p className="font-display text-xl font-semibold text-foreground">Idea not found</p>
+                        <p className="mt-2 text-sm text-muted-foreground">
                             {error?.message || "This idea may have been deleted."}
                         </p>
-                        <Button variant="mint" size="pill" asChild>
+                        <Button variant="mint" size="pill" asChild className="mt-6">
                             <a href="/">Go home</a>
                         </Button>
                     </div>
@@ -60,9 +85,17 @@ export default function IdeaPage({ params }: IdeaPageProps) {
     return (
         <>
             <Header />
-            <main className="main-container">
-                <IdeaDetail idea={idea} isAuthenticated={isAuthenticated} userId={user?.id} />
-                <CommentsSection ideaId={id} isAuthenticated={isAuthenticated} />
+            <main className="mx-auto max-w-7xl px-6 py-8 min-h-[calc(100vh-4rem)]">
+                <IdeaDetail
+                    idea={idea}
+                    isAuthenticated={isAuthenticated}
+                    authLoading={authLoading}
+                />
+                <CommentsSection
+                    ideaId={id}
+                    isAuthenticated={isAuthenticated}
+                    authLoading={authLoading}
+                />
             </main>
         </>
     );
@@ -71,23 +104,28 @@ export default function IdeaPage({ params }: IdeaPageProps) {
 function IdeaDetail({
     idea,
     isAuthenticated,
-    userId
+    authLoading,
 }: {
     idea: any;
     isAuthenticated: boolean;
-    userId?: string;
+    authLoading: boolean;
 }) {
+    const router = useRouter();
     const { mutate: vote, isPending: isVoting } = useVote(idea.id);
     const { mutate: removeVote, isPending: isRemoving } = useRemoveVote(idea.id);
 
     const userVote = idea.user_vote?.value;
-    const netVotes = idea.upvotes_count - idea.downvotes_count;
+    const netVotes = (idea.upvotes_count ?? 0) - (idea.downvotes_count ?? 0);
 
     const handleVote = (value: 1 | -1) => {
+        if (authLoading) return;
+
         if (!isAuthenticated) {
-            toast.error("Please sign in to vote");
+            toast.info("Please sign in to vote");
+            router.push(`/login?redirectTo=/ideas/${idea.id}`);
             return;
         }
+
         if (userVote === value) {
             removeVote();
         } else {
@@ -96,60 +134,69 @@ function IdeaDetail({
     };
 
     return (
-        <article className="idea-detail">
-            <div className="idea-detail-header">
-                <Avatar className="idea-detail-avatar">
-                    <AvatarImage src={idea.author?.avatar_url} />
+        <article className="mb-8 overflow-hidden rounded-[2.5rem] bg-card p-8 md:p-12 shadow-sm border border-border">
+            <div className="mb-6 flex items-center gap-4">
+                <Avatar className="h-12 w-12 border border-border">
+                    <AvatarImage src={idea.author?.avatar_url || undefined} />
                     <AvatarFallback>{getInitials(idea.author?.full_name)}</AvatarFallback>
                 </Avatar>
-                <div className="idea-detail-author-info">
-                    <span className="text-username">{idea.author?.full_name || "Anonymous"}</span>
-                    <span className="text-caption">{formatDistanceToNow(idea.created_at)}</span>
+                <div className="flex flex-col">
+                    <span className="font-semibold text-foreground">{idea.author?.full_name || "Anonymous"}</span>
+                    <span className="text-sm text-muted-foreground">{formatDistanceToNow(idea.created_at)}</span>
                 </div>
             </div>
 
-            <h1 className="idea-detail-title">{idea.title}</h1>
-            <p className="idea-detail-description">{idea.description}</p>
+            <h1 className="mb-4 font-display text-3xl md:text-4xl font-bold leading-tight text-foreground tracking-tight">{idea.title}</h1>
+            <p className="mb-8 text-lg text-muted-foreground leading-relaxed whitespace-pre-wrap">{idea.description}</p>
 
-            <div className="idea-detail-actions">
-                <div className="vote-buttons-horizontal">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
+                <div className="flex items-center gap-2 rounded-full border border-border bg-background/50 p-1.5 shadow-sm">
                     <button
                         onClick={() => handleVote(1)}
-                        disabled={isVoting || isRemoving}
-                        className={`vote-btn-horizontal ${userVote === 1 ? "vote-btn-active-up" : ""}`}
+                        disabled={isVoting || isRemoving || authLoading}
+                        className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors hover:bg-muted ${userVote === 1 ? "bg-green-500/10 text-green-600 hover:bg-green-500/20" : "text-muted-foreground"}`}
                     >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={userVote === 1 ? "fill-current" : ""}>
                             <path d="M18 15l-6-6-6 6" />
                         </svg>
-                        <span>{idea.upvotes_count}</span>
+                        <span>{idea.upvotes_count ?? 0}</span>
                     </button>
 
-                    <span className="vote-net-count">{netVotes > 0 ? `+${netVotes}` : netVotes}</span>
+                    <span className="min-w-[2rem] text-center font-bold text-foreground">{netVotes > 0 ? `+${netVotes}` : netVotes}</span>
 
                     <button
                         onClick={() => handleVote(-1)}
-                        disabled={isVoting || isRemoving}
-                        className={`vote-btn-horizontal ${userVote === -1 ? "vote-btn-active-down" : ""}`}
+                        disabled={isVoting || isRemoving || authLoading}
+                        className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors hover:bg-muted ${userVote === -1 ? "bg-red-500/10 text-red-600 hover:bg-red-500/20" : "text-muted-foreground"}`}
                     >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={userVote === -1 ? "fill-current" : ""}>
                             <path d="M6 9l6 6 6-6" />
                         </svg>
-                        <span>{idea.downvotes_count}</span>
+                        <span>{idea.downvotes_count ?? 0}</span>
                     </button>
                 </div>
 
-                <span className="idea-detail-stat">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                     </svg>
-                    {idea.comments_count} comments
+                    {idea.comments_count ?? 0} comments
                 </span>
             </div>
         </article>
     );
 }
 
-function CommentsSection({ ideaId, isAuthenticated }: { ideaId: string; isAuthenticated: boolean }) {
+function CommentsSection({
+    ideaId,
+    isAuthenticated,
+    authLoading
+}: {
+    ideaId: string;
+    isAuthenticated: boolean;
+    authLoading: boolean;
+}) {
+    const router = useRouter();
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useComments(ideaId);
     const { mutate: createComment, isPending: isCreating } = useCreateComment(ideaId);
     const [content, setContent] = useState("");
@@ -158,15 +205,18 @@ function CommentsSection({ ideaId, isAuthenticated }: { ideaId: string; isAuthen
         e.preventDefault();
         if (!content.trim()) return;
 
+        if (!isAuthenticated) {
+            toast.info("Please sign in to comment");
+            router.push(`/login?redirectTo=/ideas/${ideaId}`);
+            return;
+        }
+
         createComment(
             { content: content.trim() },
             {
                 onSuccess: () => {
                     setContent("");
                     toast.success("Comment added!");
-                },
-                onError: (error) => {
-                    toast.error(error.message || "Failed to add comment");
                 },
             }
         );
@@ -175,52 +225,64 @@ function CommentsSection({ ideaId, isAuthenticated }: { ideaId: string; isAuthen
     const comments = data?.pages.flatMap((page) => page.data) ?? [];
 
     return (
-        <section className="comment-section">
-            <h2 className="text-heading-md mb-4">Comments</h2>
+        <section className="max-w-3xl mx-auto">
+            <h2 className="mb-6 font-display text-2xl font-bold text-foreground">Comments</h2>
 
-            {isAuthenticated && (
-                <form onSubmit={handleSubmit} className="comment-form">
-                    <input
-                        type="text"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        placeholder="Write a comment..."
-                        className="form-input flex-1"
-                        disabled={isCreating}
-                    />
-                    <Button type="submit" variant="mint" size="default" disabled={isCreating || !content.trim()}>
-                        {isCreating ? "..." : "Post"}
-                    </Button>
-                </form>
-            )}
+            <form onSubmit={handleSubmit} className="mb-8 flex gap-3">
+                <input
+                    type="text"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder={isAuthenticated ? "Write a comment..." : "Sign in to comment..."}
+                    className="flex h-12 flex-1 rounded-full border border-input bg-background px-6 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={isCreating || authLoading}
+                />
+                <Button
+                    type="submit"
+                    variant="mint"
+                    size="pill"
+                    disabled={isCreating || !content.trim() || authLoading}
+                    className="h-12 px-8"
+                >
+                    {isCreating ? "..." : "Post"}
+                </Button>
+            </form>
 
             {isLoading ? (
-                <div className="comment-list">
+                <div className="space-y-6">
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="comment-item">
-                            <div className="comment-header">
-                                <Skeleton className="w-8 h-8 rounded-full" />
-                                <Skeleton className="w-24 h-3" />
+                        <div key={i} className="flex gap-4">
+                            <div className="flex flex-col items-center gap-2">
+                                <Skeleton className="h-10 w-10 rounded-full" />
                             </div>
-                            <Skeleton className="w-full h-4" />
+                            <div className="flex-1 space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <Skeleton className="h-4 w-24" />
+                                </div>
+                                <Skeleton className="h-4 w-full" />
+                            </div>
                         </div>
                     ))}
                 </div>
             ) : comments.length === 0 ? (
-                <p className="text-caption text-center py-8">No comments yet. Be the first to comment!</p>
+                <div className="py-12 text-center">
+                    <p className="text-muted-foreground">No comments yet. Be the first to comment!</p>
+                </div>
             ) : (
-                <div className="comment-list">
+                <div className="space-y-8">
                     {comments.map((comment) => (
-                        <div key={comment.id} className="comment-item">
-                            <div className="comment-header">
-                                <Avatar className="w-7 h-7">
-                                    <AvatarImage src={comment.author?.avatar_url || undefined} />
-                                    <AvatarFallback>{getInitials(comment.author?.full_name)}</AvatarFallback>
-                                </Avatar>
-                                <span className="text-username">{comment.author?.full_name || "Anonymous"}</span>
-                                <span className="text-caption">{formatDistanceToNow(comment.created_at)}</span>
+                        <div key={comment.id} className="group flex gap-4">
+                            <Avatar className="h-10 w-10 border border-border mt-1">
+                                <AvatarImage src={comment.author?.avatar_url || undefined} />
+                                <AvatarFallback>{getInitials(comment.author?.full_name)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                                <div className="mb-1 flex items-center gap-2">
+                                    <span className="font-semibold text-foreground text-sm">{comment.author?.full_name || "Anonymous"}</span>
+                                    <span className="text-xs text-muted-foreground">• {formatDistanceToNow(comment.created_at)}</span>
+                                </div>
+                                <p className="text-foreground/90 leading-relaxed text-sm">{comment.content}</p>
                             </div>
-                            <p className="comment-content">{comment.content}</p>
                         </div>
                     ))}
 
@@ -230,7 +292,7 @@ function CommentsSection({ ideaId, isAuthenticated }: { ideaId: string; isAuthen
                             size="sm"
                             onClick={() => fetchNextPage()}
                             disabled={isFetchingNextPage}
-                            className="w-full"
+                            className="w-full text-muted-foreground hover:text-foreground"
                         >
                             {isFetchingNextPage ? "Loading..." : "Load more comments"}
                         </Button>
@@ -243,18 +305,22 @@ function CommentsSection({ ideaId, isAuthenticated }: { ideaId: string; isAuthen
 
 function IdeaDetailSkeleton() {
     return (
-        <div className="idea-detail">
-            <div className="idea-detail-header">
-                <Skeleton className="w-10 h-10 rounded-full" />
-                <div className="flex flex-col gap-1">
-                    <Skeleton className="w-32 h-4" />
-                    <Skeleton className="w-20 h-3" />
+        <div className="mb-8 overflow-hidden rounded-[2.5rem] bg-card p-8 md:p-12 shadow-sm border border-border">
+            <div className="mb-6 flex items-center gap-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="flex flex-col gap-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-20" />
                 </div>
             </div>
-            <Skeleton className="w-3/4 h-8 mb-4" />
-            <Skeleton className="w-full h-4 mb-2" />
-            <Skeleton className="w-full h-4 mb-2" />
-            <Skeleton className="w-2/3 h-4" />
+            <Skeleton className="mb-4 h-10 w-3/4" />
+            <Skeleton className="mb-2 h-4 w-full" />
+            <Skeleton className="mb-2 h-4 w-full" />
+            <Skeleton className="mb-8 h-4 w-2/3" />
+
+            <div className="border-t border-border pt-6">
+                <Skeleton className="h-10 w-48 rounded-full" />
+            </div>
         </div>
     );
 }

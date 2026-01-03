@@ -8,35 +8,22 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { castVote, removeVote } from "@/lib/api/client/votes";
-import { useAuth } from "./use-auth";
 import { ideaKeys } from "./use-ideas";
 import { toast } from "sonner";
 import type { IdeaWithDetails } from "@/types/database";
 
 /**
  * Hook for casting/updating a vote with optimistic updates
- * Redirects to login if not authenticated
  */
 export function useVote(ideaId: string) {
   const queryClient = useQueryClient();
-  const router = useRouter();
-  const { isAuthenticated } = useAuth();
 
   return useMutation({
-    mutationFn: async (value: 1 | -1) => {
-      if (!isAuthenticated) {
-        router.push(`/login?redirectTo=/ideas/${ideaId}`);
-        throw new Error("Please sign in to vote");
-      }
-      return castVote(ideaId, { value });
-    },
+    mutationFn: (value: 1 | -1) => castVote(ideaId, { value }),
     
     // Optimistic update
     onMutate: async (newValue) => {
-      if (!isAuthenticated) return;
-      
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ideaKeys.detail(ideaId) });
       await queryClient.cancelQueries({ queryKey: ideaKeys.lists() });
@@ -78,12 +65,14 @@ export function useVote(ideaId: string) {
     },
 
     // Rollback on error
-    onError: (err, newValue, context) => {
+    onError: (err, _newValue, context) => {
       if (context?.previousIdea) {
         queryClient.setQueryData(ideaKeys.detail(ideaId), context.previousIdea);
       }
-      // Only show error toast if it's not an auth redirect
-      if (!err.message.includes("sign in")) {
+      // Check for unauthorized - likely session expired
+      if (err.message?.includes("Unauthorized") || err.message?.includes("401")) {
+        toast.error("Please sign in to vote");
+      } else {
         toast.error(err.message || "Failed to vote");
       }
     },
@@ -101,19 +90,11 @@ export function useVote(ideaId: string) {
  */
 export function useRemoveVote(ideaId: string) {
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
 
   return useMutation({
-    mutationFn: async () => {
-      if (!isAuthenticated) {
-        throw new Error("Not authenticated");
-      }
-      return removeVote(ideaId);
-    },
+    mutationFn: () => removeVote(ideaId),
 
     onMutate: async () => {
-      if (!isAuthenticated) return;
-      
       await queryClient.cancelQueries({ queryKey: ideaKeys.detail(ideaId) });
 
       const previousIdea = queryClient.getQueryData<{ data: IdeaWithDetails }>(
@@ -142,6 +123,7 @@ export function useRemoveVote(ideaId: string) {
       if (context?.previousIdea) {
         queryClient.setQueryData(ideaKeys.detail(ideaId), context.previousIdea);
       }
+      toast.error(err.message || "Failed to remove vote");
     },
 
     onSettled: () => {

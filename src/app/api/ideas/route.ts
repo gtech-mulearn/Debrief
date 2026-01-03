@@ -62,20 +62,29 @@ export async function GET(request: NextRequest) {
     let dbQuery = supabase
       .from("ideas")
       .select("*")
-      .order("created_at", { ascending: false })
       .limit(query.limit + 1);
+
+    // Apply sorting based on sort option
+    switch (query.sort) {
+      case "votes_desc":
+        dbQuery = dbQuery.order("upvotes_count", { ascending: false });
+        break;
+      case "votes_asc":
+        dbQuery = dbQuery.order("upvotes_count", { ascending: true });
+        break;
+      case "created_asc":
+        dbQuery = dbQuery.order("created_at", { ascending: true });
+        break;
+      case "created_desc":
+      default:
+        dbQuery = dbQuery.order("created_at", { ascending: false });
+        break;
+    }
 
     // Apply cursor pagination
     if (query.cursor) {
       const [timestamp, id] = query.cursor.split("_");
       dbQuery = dbQuery.or(`created_at.lt.${timestamp},and(created_at.eq.${timestamp},id.lt.${id})`);
-    }
-
-    // Apply sorting
-    if (query.sort === "popular") {
-      dbQuery = dbQuery.order("upvotes_count", { ascending: false });
-    } else if (query.sort === "controversial") {
-      dbQuery = dbQuery.order("comments_count", { ascending: false });
     }
 
     const { data, error } = await dbQuery;
@@ -204,6 +213,7 @@ export async function POST(request: NextRequest) {
       avatar_url: user.user_metadata?.avatar_url || null 
     };
 
+    // Return the idea directly - not wrapped in data
     return successResponse({
       data: {
         ...idea,

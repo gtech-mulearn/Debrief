@@ -13,16 +13,17 @@ import {
   useQueryClient,
   useInfiniteQuery,
 } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import {
   fetchIdeas,
   fetchIdea,
   createIdea,
   deleteIdea,
 } from "@/lib/api/client/ideas";
-import { useAuth } from "./use-auth";
 import { toast } from "sonner";
 import type { CreateIdeaRequest } from "@/types/api";
+
+// Sort options type
+export type SortOption = "votes_desc" | "votes_asc" | "created_desc" | "created_asc";
 
 // Query keys for cache management
 export const ideaKeys = {
@@ -38,7 +39,7 @@ export const ideaKeys = {
  * Hook for fetching paginated ideas with infinite scroll
  */
 export function useIdeas(params?: {
-  sort?: "latest" | "popular" | "controversial";
+  sort?: SortOption;
   limit?: number;
 }) {
   return useInfiniteQuery({
@@ -64,33 +65,26 @@ export function useIdea(id: string) {
     queryKey: ideaKeys.detail(id),
     queryFn: () => fetchIdea(id),
     staleTime: 30 * 1000,
-    enabled: !!id,
+    enabled: !!id && id !== "undefined",
   });
 }
 
 /**
  * Hook for creating a new idea
- * Redirects to login if not authenticated
  */
 export function useCreateIdea() {
   const queryClient = useQueryClient();
-  const router = useRouter();
-  const { isAuthenticated } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: CreateIdeaRequest) => {
-      if (!isAuthenticated) {
-        router.push("/login?redirectTo=/ideas/new");
-        throw new Error("Please sign in to create an idea");
-      }
-      return createIdea(data);
-    },
+    mutationFn: (data: CreateIdeaRequest) => createIdea(data),
     onSuccess: () => {
-      // Invalidate ideas list to refetch
       queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
+      toast.success("Idea created!");
     },
     onError: (err) => {
-      if (!err.message.includes("sign in")) {
+      if (err.message?.includes("Unauthorized") || err.message?.includes("401")) {
+        toast.error("Please sign in to create ideas");
+      } else {
         toast.error(err.message || "Failed to create idea");
       }
     },
@@ -106,7 +100,6 @@ export function useDeleteIdea() {
   return useMutation({
     mutationFn: (id: string) => deleteIdea(id),
     onSuccess: (_, id) => {
-      // Remove from cache and invalidate lists
       queryClient.removeQueries({ queryKey: ideaKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
       toast.success("Idea deleted");

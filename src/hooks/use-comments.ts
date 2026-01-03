@@ -12,13 +12,11 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import {
   fetchComments,
   createComment,
   deleteComment,
 } from "@/lib/api/client/comments";
-import { useAuth } from "./use-auth";
 import { ideaKeys } from "./use-ideas";
 import { toast } from "sonner";
 import type { CreateCommentRequest } from "@/types/api";
@@ -45,36 +43,27 @@ export function useComments(ideaId: string, params?: { limit?: number }) {
       lastPage.hasMore ? lastPage.nextCursor : undefined,
     initialPageParam: undefined as string | undefined,
     staleTime: 30 * 1000,
-    enabled: !!ideaId,
+    enabled: !!ideaId && ideaId !== "undefined",
   });
 }
 
 /**
  * Hook for creating a new comment
- * Redirects to login if not authenticated
  */
 export function useCreateComment(ideaId: string) {
   const queryClient = useQueryClient();
-  const router = useRouter();
-  const { isAuthenticated } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: CreateCommentRequest) => {
-      if (!isAuthenticated) {
-        router.push(`/login?redirectTo=/ideas/${ideaId}`);
-        throw new Error("Please sign in to comment");
-      }
-      return createComment(ideaId, data);
-    },
+    mutationFn: (data: CreateCommentRequest) => createComment(ideaId, data),
     onSuccess: () => {
-      // Invalidate comments list
       queryClient.invalidateQueries({ queryKey: commentKeys.list(ideaId) });
-      // Invalidate idea to update comments_count
       queryClient.invalidateQueries({ queryKey: ideaKeys.detail(ideaId) });
       queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
     },
     onError: (err) => {
-      if (!err.message.includes("sign in")) {
+      if (err.message?.includes("Unauthorized") || err.message?.includes("401")) {
+        toast.error("Please sign in to comment");
+      } else {
         toast.error(err.message || "Failed to add comment");
       }
     },
@@ -93,6 +82,7 @@ export function useDeleteComment(ideaId: string) {
       queryClient.invalidateQueries({ queryKey: commentKeys.list(ideaId) });
       queryClient.invalidateQueries({ queryKey: ideaKeys.detail(ideaId) });
       queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
+      toast.success("Comment deleted");
     },
     onError: (err) => {
       toast.error(err.message || "Failed to delete comment");

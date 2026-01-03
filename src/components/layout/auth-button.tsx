@@ -1,15 +1,13 @@
 /**
  * Auth Button Component
  * 
- * Shows sign in or user menu based on auth state.
- * Uses useAuth hook - never calls API directly.
+ * Shows sign in button if not authenticated, otherwise shows user dropdown.
  */
 
 "use client";
 
 import { useAuth } from "@/hooks";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,70 +15,81 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials } from "@/lib/utils";
 
 export function AuthButton() {
-    const { user, loading, isAuthenticated, signInWithGoogle, signOut } = useAuth();
+    const { user, isAuthenticated, loading, signInWithGoogle, signOut } = useAuth();
 
+    // Show skeleton while loading
     if (loading) {
-        return <Skeleton className="h-10 w-10 rounded-full" />;
+        return (
+            <div className="w-20 h-9 rounded-full bg-secondary animate-pulse" />
+        );
     }
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
         return (
             <Button
                 variant="mint"
-                size="pill-sm"
-                onClick={() => signInWithGoogle()}
-                className="auth-button-signin"
+                size="pill"
+                asChild
             >
-                Sign in
+                <a href="/login">Sign in</a>
             </Button>
         );
     }
 
-    const initials = user?.user_metadata?.full_name
-        ?.split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase() || "U";
+    const displayName = user.user_metadata?.full_name || user.email || "User";
+    const avatarUrl = user.user_metadata?.avatar_url;
+    const initials = getInitials(displayName);
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="auth-button-avatar">
-                    <Avatar className="h-9 w-9">
-                        <AvatarImage
-                            src={user?.user_metadata?.avatar_url}
-                            alt={user?.user_metadata?.full_name || "User"}
-                        />
-                        <AvatarFallback className="bg-mint text-mint-foreground">
-                            {initials}
-                        </AvatarFallback>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar className="h-8 w-8">
+                        <AvatarImage src={avatarUrl} alt={displayName} />
+                        <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-                <div className="dropdown-user-info">
-                    <p className="text-label-md">{user?.user_metadata?.full_name}</p>
-                    <p className="text-caption">{user?.email}</p>
+            <DropdownMenuContent align="end" className="w-48">
+                <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium">{displayName}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                    <a href="/profile" className="dropdown-menu-item">
-                        Profile
-                    </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <a href="/ideas/new" className="dropdown-menu-item">
+                    <a href="/ideas/new" className="cursor-pointer">
+                        <svg
+                            className="mr-2 h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
                         New Idea
                     </a>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     onClick={() => signOut()}
-                    className="dropdown-menu-item text-destructive"
+                    className="cursor-pointer text-destructive"
                 >
+                    <svg
+                        className="mr-2 h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                    >
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
                     Sign out
                 </DropdownMenuItem>
             </DropdownMenuContent>

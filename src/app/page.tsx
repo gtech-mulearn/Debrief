@@ -1,28 +1,30 @@
 /**
  * Home Page
  * 
- * Main feed showing ideas list.
+ * Main feed showing ideas list with sort dropdown.
  */
 
 "use client";
 
 import { useState } from "react";
 import { Header } from "@/components/layout";
-import { IdeasList, FilterTabs } from "@/components/ideas";
+import { IdeasList, SortDropdown, type SortOption } from "@/components/ideas";
 
 export default function HomePage() {
-  const [sort, setSort] = useState<"latest" | "popular" | "controversial">("latest");
+  const [sort, setSort] = useState<SortOption>("votes_desc");
 
   return (
     <>
       <Header />
-      <main className="main-container">
-        <div className="page-header">
-          <h1 className="page-title">mupoll</h1>
-          <p className="page-description">Share your ideas, get feedback</p>
+      <main className="mx-auto max-w-7xl px-6 py-8">
+        <div className="mb-8">
+          <h1 className="font-display text-4xl font-bold text-foreground mb-2">mupoll</h1>
+          <p className="font-sans text-base text-muted-foreground">Share your ideas, get feedback</p>
         </div>
 
-        <FilterTabs value={sort} onChange={setSort} />
+        <div className="flex justify-end mb-4">
+          <SortDropdown value={sort} onChange={setSort} />
+        </div>
 
         <IdeasList sort={sort} />
       </main>

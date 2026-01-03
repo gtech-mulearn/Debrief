@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,13 @@ export default function NewIdeaPage() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
+
+    // Redirect to login if not authenticated (after loading completes)
+    useEffect(() => {
+        if (!authLoading && !isAuthenticated) {
+            router.push("/login?redirectTo=/ideas/new");
+        }
+    }, [authLoading, isAuthenticated, router]);
 
     const validate = (): boolean => {
         const newErrors: { title?: string; description?: string } = {};
@@ -54,16 +61,19 @@ export default function NewIdeaPage() {
             { title: title.trim(), description: description.trim() },
             {
                 onSuccess: (response) => {
-                    toast.success("Idea created successfully!");
-                    router.push(`/ideas/${response.data.id}`);
-                },
-                onError: (error) => {
-                    toast.error(error.message || "Failed to create idea");
+                    // Access ID from response.data
+                    const ideaId = response?.data?.id;
+                    if (ideaId) {
+                        router.push(`/ideas/${ideaId}`);
+                    } else {
+                        router.push("/");
+                    }
                 },
             }
         );
     };
 
+    // Show loading while checking auth
     if (authLoading) {
         return (
             <>
@@ -77,23 +87,33 @@ export default function NewIdeaPage() {
         );
     }
 
+    // Don't render form if not authenticated (will redirect)
     if (!isAuthenticated) {
-        router.push("/login?redirectTo=/ideas/new");
-        return null;
+        return (
+            <>
+                <Header />
+                <main className="main-container">
+                    <div className="flex items-center justify-center py-12">
+                        <div className="loading-spinner" />
+                        <span className="ml-2 text-muted-foreground">Redirecting to login...</span>
+                    </div>
+                </main>
+            </>
+        );
     }
 
     return (
         <>
             <Header />
-            <main className="main-container">
-                <div className="page-header">
-                    <h1 className="page-title">New poll</h1>
-                    <p className="page-description">Share your idea with the community</p>
+            <main className="mx-auto max-w-7xl px-6 py-8">
+                <div className="mb-8">
+                    <h1 className="font-display text-2xl font-bold text-foreground mb-2">New poll</h1>
+                    <p className="font-sans text-base text-muted-foreground">Share your idea with the community</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="max-w-xl">
-                    <div className="form-group">
-                        <label htmlFor="title" className="form-label">
+                <form onSubmit={handleSubmit} className="max-w-xl space-y-6">
+                    <div className="space-y-2">
+                        <label htmlFor="title" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                             Enter your question!
                         </label>
                         <input
@@ -102,14 +122,14 @@ export default function NewIdeaPage() {
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="What's your idea?"
-                            className={`form-input ${errors.title ? "border-destructive" : ""}`}
+                            className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.title ? "border-destructive focus-visible:ring-destructive" : "border-input"}`}
                             disabled={isPending}
                         />
-                        {errors.title && <p className="form-error">{errors.title}</p>}
+                        {errors.title && <p className="text-sm font-medium text-destructive">{errors.title}</p>}
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="description" className="form-label">
+                    <div className="space-y-2">
+                        <label htmlFor="description" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                             Description
                         </label>
                         <textarea
@@ -117,16 +137,16 @@ export default function NewIdeaPage() {
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Describe your idea in detail..."
-                            className={`form-input form-textarea ${errors.description ? "border-destructive" : ""}`}
+                            className={`flex min-h-[120px] w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.description ? "border-destructive focus-visible:ring-destructive" : "border-input"}`}
                             disabled={isPending}
                         />
-                        {errors.description && <p className="form-error">{errors.description}</p>}
-                        <p className="text-caption mt-1">
+                        {errors.description && <p className="text-sm font-medium text-destructive">{errors.description}</p>}
+                        <p className="text-xs text-muted-foreground mt-1">
                             {description.length}/5000 characters
                         </p>
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 pt-4">
                         <Button
                             type="button"
                             variant="secondary"
@@ -144,7 +164,7 @@ export default function NewIdeaPage() {
                         >
                             {isPending ? (
                                 <>
-                                    <span className="loading-spinner" />
+                                    <span className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
                                     Creating...
                                 </>
                             ) : (

@@ -35,7 +35,7 @@ export const updateIdeaSchema = z.object({
 export const getIdeasQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().min(1).max(50).default(20),
-  sort: z.enum(["latest", "popular", "controversial"]).default("latest"),
+  sort: z.enum(["votes_desc", "votes_asc", "created_desc", "created_asc"]).default("votes_desc"),
 });
 
 export type CreateIdeaInput = z.infer<typeof createIdeaSchema>;

@@ -131,13 +131,14 @@ export function errorResponse(error: unknown): NextResponse {
 
 /**
  * Creates a standardized success response
+ * Returns data directly without extra wrapping
  */
 export function successResponse<T>(
-  data: T,
+  responseBody: T,
   status = 200,
   headers?: HeadersInit
 ): NextResponse {
-  return NextResponse.json({ data }, { status, headers });
+  return NextResponse.json(responseBody, { status, headers });
 }
 
 /**

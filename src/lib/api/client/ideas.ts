@@ -14,13 +14,16 @@ import type {
 
 const API_BASE = "/api/ideas";
 
+// Sort options type
+type SortOption = "votes_desc" | "votes_asc" | "created_desc" | "created_asc";
+
 /**
  * Fetch paginated ideas list
  */
 export async function fetchIdeas(params?: {
   cursor?: string;
   limit?: number;
-  sort?: "latest" | "popular" | "controversial";
+  sort?: SortOption;
 }): Promise<GetIdeasResponse> {
   const searchParams = new URLSearchParams();
   

@@ -8,8 +8,26 @@ export interface Profile {
   email: string | null;
   full_name: string | null;
   avatar_url: string | null;
+  karma: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface Badge {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  icon_name: string;
+  created_at: string;
+}
+
+export interface UserBadge {
+  id: string;
+  user_id: string;
+  badge_id: string;
+  awarded_at: string;
+  badge?: Badge; // For joined queries
 }
 
 export interface Idea {
@@ -111,6 +129,16 @@ export interface Database {
         Row: IdeaFeedback;
         Insert: Pick<IdeaFeedback, "idea_id" | "level_number" | "user_id" | "content" | "ratings" | "tags">;
         Update: Partial<Pick<IdeaFeedback, "content" | "ratings" | "tags">>;
+      };
+      badges: {
+        Row: Badge;
+        Insert: Pick<Badge, "slug" | "name" | "description" | "icon_name">;
+        Update: Partial<Pick<Badge, "name" | "description" | "icon_name">>;
+      };
+      user_badges: {
+        Row: UserBadge;
+        Insert: Pick<UserBadge, "user_id" | "badge_id">;
+        Update: never;
       };
     };
   };

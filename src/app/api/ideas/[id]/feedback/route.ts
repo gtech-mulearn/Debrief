@@ -5,6 +5,7 @@ import {
     UnauthorizedError,
     withErrorHandling,
 } from "@/lib/api/errors";
+import { awardKarma } from "@/lib/gamification";
 
 interface RouteContext {
     params: Promise<{ id: string }>;
@@ -24,14 +25,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
         let query = supabase
             .from("idea_feedback")
-            .select(`
-                *,
-                author:auth.users!user_id(
-                    id,
-                    full_name,
-                    avatar_url
-                )
-            `)
+            .select("*")
             .eq("idea_id", id)
             .order("created_at", { ascending: false });
 
@@ -39,11 +33,33 @@ export async function GET(request: NextRequest, context: RouteContext) {
             query = query.eq("level_number", parseInt(levelNumber, 10));
         }
 
-        const { data, error } = await query;
+        const { data: feedbacks, error } = await query;
 
         if (error) throw error;
 
-        return successResponse({ data });
+        // Fetch authors manually
+        const userIds = [...new Set((feedbacks || []).map((f: any) => f.user_id))];
+        let profiles: Record<string, any> = {};
+
+        if (userIds.length > 0) {
+            const { data: profilesData } = await supabase
+                .from("profiles")
+                .select("id, full_name, avatar_url")
+                .in("id", userIds);
+
+            if (profilesData) {
+                profiles = Object.fromEntries(
+                    profilesData.map((p: any) => [p.id, p])
+                );
+            }
+        }
+
+        const enrichedData = (feedbacks || []).map((f: any) => ({
+            ...f,
+            author: profiles[f.user_id] || { id: f.user_id, full_name: "Unknown", avatar_url: null }
+        }));
+
+        return successResponse({ data: enrichedData });
     });
 }
 
@@ -69,7 +85,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
         const supabase = await createServerClient();
 
-        const { data, error } = await supabase
+        const { data: feedback, error } = await supabase
             .from("idea_feedback")
             .insert({
                 idea_id: id,
@@ -78,18 +94,34 @@ export async function POST(request: NextRequest, context: RouteContext) {
                 content,
                 ratings: ratings || {},
             } as any)
-            .select(`
-                *,
-                author:auth.users!user_id(
-                    id,
-                    full_name,
-                    avatar_url
-                )
-            `)
+            .select("*")
             .single();
 
         if (error) throw error;
 
-        return successResponse({ data });
+        // Gamification: Award Karma for giving feedback
+        try {
+            await awardKarma(user.id, 5); // +5 for feedback
+        } catch (e) {
+            console.error("Gamification error:", e);
+        }
+
+        // Fetch author profile (current user)
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("id, full_name, avatar_url")
+            .eq("id", user.id)
+            .single();
+
+        const enrichedData = {
+            ...(feedback as any),
+            author: profile || {
+                id: user.id,
+                full_name: user.user_metadata?.full_name,
+                avatar_url: user.user_metadata?.avatar_url
+            }
+        };
+
+        return successResponse({ data: enrichedData });
     });
 }

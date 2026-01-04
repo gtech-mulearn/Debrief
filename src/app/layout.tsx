@@ -19,8 +19,12 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Debrief - Validate Your Ideas",
+  title: {
+    template: "%s | Debrief",
+    default: "Debrief - Validate Your Ideas",
+  },
   description: "A forge for your ideas. Validate, refine, and prove your concepts before you build.",
+  keywords: ["ideas", "validation", "feedback", "saas", "startup", "polls"],
 };
 
 export default function RootLayout({

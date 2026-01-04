@@ -19,6 +19,7 @@ import { Loader2, GitBranch, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface PivotDialogProps {
   ideaId: string;
@@ -94,7 +95,6 @@ export function PivotDialog({
           setErrors({});
         },
         onError: (error: Error) => {
-          // Try to parse validation errors from the server
           try {
             const parsed = JSON.parse(error.message);
             if (parsed.errors) {
@@ -121,16 +121,17 @@ export function PivotDialog({
     }}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button variant="outline" size="sm">
-            <GitBranch className="mr-2 h-4 w-4" />
+          <Button variant="shimmer-primary" size="lg" className="w-full sm:w-auto gap-2 font-bold">
+            <GitBranch className="h-5 w-5" />
             Create Pivot
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      {/* Increased max-width generally to match standard comfortable reading width for forms */}
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <GitBranch className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-2 text-xl font-heading">
+            <GitBranch className="h-5 w-5 text-primary" />
             Create New Pivot
           </DialogTitle>
           <DialogDescription>
@@ -139,111 +140,120 @@ export function PivotDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div className="space-y-6">
-            {/* Warning */}
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                This will save the current state as{" "}
-                <Badge variant="outline" className="mx-1">
-                  Version {nextVersionNumber - 1}
+          <div className="grid gap-6 py-4">
+            {/* Warning - Matching BackingDialog's 'Anonymous' toggle style card */}
+            <div className="rounded-lg border border-white/5 bg-white/2 p-3 flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 text-primary shrink-0" />
+              <div className="text-sm text-foreground/90 leading-relaxed">
+                This action archives the current state as
+                <Badge variant="outline" className="mx-1.5 border-primary/30 text-primary bg-primary/10">
+                  v{historyData?.data ? historyData.data.length + 1 : 1}
                 </Badge>
-                and create a new working version.
-              </AlertDescription>
-            </Alert>
+                and creates a new working version.
+              </div>
+            </div>
 
             {/* General Error */}
             {errors.general && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="border-rose-500/20 bg-rose-950/20 text-rose-200">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>{errors.general}</AlertDescription>
               </Alert>
             )}
 
-            {/* Current State Preview */}
-            <div className="rounded-lg border border-border bg-muted/50 p-4">
-              <p className="text-sm font-medium text-muted-foreground mb-2">
-                Current Version (to be archived):
-              </p>
-              <p className="font-semibold text-foreground">{currentTitle}</p>
-              <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                {currentDescription}
-              </p>
-            </div>
-
-            {/* New Title */}
-            <div className="space-y-2">
-              <Label htmlFor="new-title">
-                New Title <span className="text-muted-foreground">(optional)</span>
-              </Label>
-              <Input
-                id="new-title"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="Leave blank to keep current title"
-                maxLength={200}
-                className={errors.newTitle ? "border-red-500" : ""}
-              />
-              {errors.newTitle && (
-                <p className="text-sm text-red-500">{errors.newTitle}</p>
-              )}
-            </div>
-
-            {/* New Description */}
-            <div className="space-y-2">
-              <Label htmlFor="new-description">
-                New Description <span className="text-muted-foreground">(optional)</span>
-              </Label>
-              <Textarea
-                id="new-description"
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-                placeholder="Leave blank to keep current description"
-                rows={4}
-                maxLength={5000}
-                className={`resize-none ${errors.newDescription ? "border-red-500" : ""}`}
-              />
-              {errors.newDescription && (
-                <p className="text-sm text-red-500">{errors.newDescription}</p>
-              )}
-            </div>
-
-            {/* Pivot Reason (Required) */}
-            <div className="space-y-2">
-              <Label htmlFor="pivot-reason" className="text-foreground">
-                Why are you pivoting? <span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                id="pivot-reason"
-                value={pivotReason}
-                onChange={(e) => setPivotReason(e.target.value)}
-                placeholder="E.g., Customer interviews revealed nobody cares about X..."
-                rows={3}
-                maxLength={1000}
-                className={`resize-none ${errors.pivotReason ? "border-red-500" : ""}`}
-              />
-              {errors.pivotReason ? (
-                <p className="text-sm text-red-500">{errors.pivotReason}</p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  {pivotReason.length}/1000 characters (min 10)
+            {/* Current State Preview - Matching 'Selected Pledge' style conceptually (Bordered Card) */}
+            <div className="space-y-3">
+              <Label className="text-muted-foreground uppercase tracking-wider text-xs font-bold">Archiving Version</Label>
+              <div className="rounded-xl border border-white/5 bg-white/2 p-4">
+                <p className="font-heading font-semibold text-foreground text-lg">{currentTitle}</p>
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                  {currentDescription}
                 </p>
-              )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* New Title */}
+              <div className="space-y-2">
+                <Label htmlFor="new-title">New Title <span className="text-muted-foreground text-xs font-normal ml-1">(Optional)</span></Label>
+                <Input
+                  id="new-title"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="Leave blank to keep current title"
+                  maxLength={200}
+                  className={cn(
+                    "bg-white/5 border-white/10 focus-visible:ring-primary/50",
+                    errors.newTitle && "border-rose-500/50 focus-visible:ring-rose-500/50"
+                  )}
+                />
+                {errors.newTitle && (
+                  <p className="text-sm text-rose-500">{errors.newTitle}</p>
+                )}
+              </div>
+
+              {/* New Description */}
+              <div className="space-y-2">
+                <Label htmlFor="new-description">New Description <span className="text-muted-foreground text-xs font-normal ml-1">(Optional)</span></Label>
+                <Textarea
+                  id="new-description"
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder="Leave blank to keep current description"
+                  rows={3}
+                  maxLength={5000}
+                  className={cn(
+                    "resize-none bg-white/5 border-white/10 focus-visible:ring-primary/50",
+                    errors.newDescription && "border-rose-500/50 focus-visible:ring-rose-500/50"
+                  )}
+                />
+                {errors.newDescription && (
+                  <p className="text-sm text-rose-500">{errors.newDescription}</p>
+                )}
+              </div>
+
+              {/* Pivot Reason (Required) */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="pivot-reason" className="text-foreground">
+                    Why are you pivoting? <span className="text-rose-500">*</span>
+                  </Label>
+                  <span className={cn(
+                    "text-xs",
+                    pivotReason.length < 10 ? "text-rose-400" : "text-emerald-400"
+                  )}>
+                    {pivotReason.length}/1000
+                  </span>
+                </div>
+                <Textarea
+                  id="pivot-reason"
+                  value={pivotReason}
+                  onChange={(e) => setPivotReason(e.target.value)}
+                  placeholder="E.g., Customer interviews revealed nobody cares about X..."
+                  rows={3}
+                  maxLength={1000}
+                  className={cn(
+                    "resize-none bg-white/5 border-white/10 focus-visible:ring-primary/50 min-h-[100px]",
+                    errors.pivotReason && "border-rose-500/50 focus-visible:ring-rose-500/50"
+                  )}
+                />
+                {errors.pivotReason && (
+                  <p className="text-sm text-rose-500">{errors.pivotReason}</p>
+                )}
+              </div>
             </div>
           </div>
 
-          <DialogFooter className="mt-6">
+          <DialogFooter className="flex-col gap-3 sm:gap-0">
+            {/* Matching BackingDialog Button Style: Wide, Bold, Colored */}
             <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
+              type="submit"
+              variant="shimmer-primary"
               disabled={isPending}
+              className="w-full font-bold"
             >
-              Cancel
-            </Button>
-            <Button type="submit" variant="default" disabled={isPending}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Pivot
+              Confirm & Create Pivot
             </Button>
           </DialogFooter>
         </form>

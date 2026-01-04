@@ -70,10 +70,8 @@ export function IdeasList({ sort = "votes_desc" }: IdeasListProps) {
         );
     }
 
-    // Alternate between mint and coral variants for visual interest
+    // Use default 'glass' variant for a clean, consistent look
     const getVariant = (index: number): "mint" | "coral" | "default" => {
-        if (index % 3 === 0) return "mint";
-        if (index % 3 === 1) return "coral";
         return "default";
     };
 

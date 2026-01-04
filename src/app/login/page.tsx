@@ -1,16 +1,18 @@
 /**
  * Login Page
  * 
- * Welcome screen with Google OAuth login.
- * Based on reference design.
+ * Premium SaaS Login Screen
+ * Dark, Cinematic, Glassmorphism
  */
 
 "use client";
 
 import { useAuth } from "@/hooks";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
     const { isAuthenticated, loading, signInWithGoogle } = useAuth();
@@ -34,115 +36,131 @@ export default function LoginPage() {
 
     if (loading) {
         return (
-            <div className="flex h-screen w-full items-center justify-center bg-[#F8F9FA]">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+            <div className="flex h-screen w-full items-center justify-center bg-background">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent shadow-lg shadow-primary/20" />
             </div>
         );
     }
 
     return (
-        <div className="relative min-h-screen w-full bg-[#f8f9fa] flex flex-col md:flex-row font-sans overflow-hidden">
-            {/* Grid Background - Visible on the left/visual side */}
-            <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] z-0" style={{ backgroundSize: "40px 40px" }} />
+        <div className="relative min-h-screen w-full flex flex-col md:flex-row font-sans overflow-hidden bg-background text-foreground selection:bg-primary/20">
+            {/* Global Ambient Background */}
+            <div className="absolute inset-0 pointer-events-none z-0 bg-page-gradient" />
 
-            {/* Left Side: Visuals */}
-            <div className="relative flex-1 flex flex-col items-center justify-center p-6 pt-20 pb-24 md:p-12 md:pb-12 z-10 w-full max-w-5xl mx-auto md:max-w-none">
+            {/* Left Side: Visual Showcase */}
+            <div className="relative flex-1 flex flex-col items-center justify-center p-6 lg:p-12 z-10 w-full overflow-hidden">
 
-                {/* Center Status Card */}
-                <div className="relative z-20 mb-8 md:mb-12 rounded-[2rem] bg-white px-8 py-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-center animate-fade-in-up">
-                    <h2 className="font-display text-lg font-medium text-gray-500 mb-1">You have</h2>
-                    <p className="font-display text-2xl font-bold text-gray-900">12 Active Poll</p>
-                </div>
+                {/* Visual Content Container */}
+                <div className="relative z-20 w-full max-w-2xl mx-auto flex flex-col items-center">
 
-                {/* Floating Avatars Container - Constrained width on desktop to keep them somewhat grouped */}
-                <div className="absolute inset-x-0 top-0 h-full w-full max-w-3xl mx-auto pointer-events-none">
-                    {/* Top Left */}
-                    <div className="absolute top-[15%] left-[10%] md:top-[20%] md:left-[15%] animate-pulse-soft" style={{ animationDelay: "0s" }}>
-                        <div className="relative">
-                            <img src="https://i.pravatar.cc/150?u=1" alt="User" className="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-white shadow-lg" />
-                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-600 shadow-sm z-30">
-                                Yes! of course!
+                    {/* Floating Glass Dashboard Mockup */}
+                    <div className="relative mb-12 animate-fade-in-up">
+                        <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full opacity-20" />
+
+                        {/* Status Card (Glass) */}
+                        <Card variant="glass" className="relative z-20 mb-8 border-white/10 mx-auto max-w-xs md:max-w-sm text-center py-6 backdrop-blur-xl bg-white/5">
+                            <CardContent className="p-0 space-y-1">
+                                <h3 className="font-sans text-sm font-medium text-muted-foreground">Active Polls</h3>
+                                <div className="font-heading text-4xl font-bold tracking-tight text-white drop-shadow-sm">
+                                    12
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Interactive Elements / Avatars */}
+                        <div className="relative h-64 w-full md:w-96 mx-auto perspective-[1000px]">
+                            {/* Central element */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+                                <Card variant="glass" className="w-64 p-4 rounded-2xl border-white/10 bg-[#09090b]/40 backdrop-blur-md shadow-2xl shadow-black/50 overflow-hidden transform transition-all hover:scale-105 duration-500">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Live Feedback</span>
+                                    </div>
+                                    <p className="font-heading text-lg font-bold leading-tight mb-2">
+                                        "Would you use this analytics tool?"
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-4">
+                                        <div className="flex -space-x-2">
+                                            {[1, 2, 3].map((i) => (
+                                                <div key={i} className={`w-8 h-8 rounded-full border-2 border-background bg-zinc-800 flex items-center justify-center text-[10px] z-${i}0`}>
+                                                    <img src={`https://i.pravatar.cc/100?u=${i + 10}`} className="w-full h-full rounded-full opacity-80" alt="" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <span className="text-xs text-muted-foreground">+42 voted</span>
+                                    </div>
+                                </Card>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Top Right */}
-                    <div className="absolute top-[12%] right-[15%] md:top-[15%] md:right-[20%] animate-pulse-soft" style={{ animationDelay: "1.5s" }}>
-                        <div className="relative">
-                            <img src="https://i.pravatar.cc/150?u=5" alt="User" className="w-14 h-14 md:w-20 md:h-20 rounded-full border-2 border-white shadow-lg" />
-                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-600 shadow-sm z-30">
-                                My Fav!
+                            {/* Orbiting Elements */}
+                            <div className="absolute top-0 right-10 animate-float-slow delay-100">
+                                <Card variant="glass" className="px-3 py-1.5 rounded-full bg-zinc-900/50 border-white/5 backdrop-blur-md">
+                                    <span className="text-xs font-semibold text-emerald-400">Yes! 🚀</span>
+                                </Card>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Middle Left */}
-                    <div className="absolute top-[35%] left-[5%] md:top-[45%] md:left-[10%] animate-pulse-soft" style={{ animationDelay: "0.5s" }}>
-                        <div className="relative">
-                            <img src="https://i.pravatar.cc/150?u=3" alt="User" className="w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-white shadow-lg" />
-                            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-600 shadow-sm z-30">
-                                Sure!
+                            <div className="absolute bottom-10 left-0 animate-float-slow delay-700">
+                                <Card variant="glass" className="px-3 py-1.5 rounded-full bg-zinc-900/50 border-white/5 backdrop-blur-md">
+                                    <span className="text-xs font-semibold text-rose-400">Maybe not</span>
+                                </Card>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Middle Right */}
-                    <div className="absolute top-[30%] right-[8%] md:top-[40%] md:right-[15%] animate-pulse-soft" style={{ animationDelay: "2s" }}>
-                        <div className="relative">
-                            <img src="https://i.pravatar.cc/150?u=4" alt="User" className="w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-white shadow-lg" />
-                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-600 shadow-sm z-30">
-                                No Thanks!
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Lower Right */}
-                    <div className="absolute top-[50%] right-[20%] md:top-[65%] md:right-[25%] animate-pulse-soft" style={{ animationDelay: "1s" }}>
-                        <div className="relative">
-                            <img src="https://i.pravatar.cc/150?u=8" alt="User" className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-white shadow-lg" />
-                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-600 shadow-sm z-30">
-                                No!
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Main Question Bubble */}
-                <div className="mt-auto md:mb-12 relative z-10 animate-scale-in w-full flex justify-center max-w-md md:max-w-lg">
-                    <div className="relative flex items-center w-full">
-                        <img src="https://i.pravatar.cc/150?u=9" alt="Main User" className="w-16 h-16 md:w-24 md:h-24 rounded-full border-4 border-white shadow-xl z-20 grayscale shrink-0" />
-                        <div className="relative -ml-6 bg-white pl-10 pr-8 py-4 md:py-6 rounded-r-[2.5rem] rounded-tl-[2.5rem] shadow-xl w-full">
-                            <p className="font-display font-bold text-gray-900 text-sm md:text-lg leading-tight">
-                                Would you use this SaaS analytics tool?
-                            </p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Right Side: Login / CTA */}
-            <div className="relative z-30 -mt-6 md:mt-0 w-full md:w-[450px] lg:w-[550px] shrink-0 flex flex-col justify-center items-center rounded-t-[3rem] md:rounded-t-none md:rounded-l-[3.5rem] bg-[#111111] px-8 py-12 md:p-16 shadow-[0_-10px_40px_rgba(0,0,0,0.2)] md:shadow-2xl md:min-h-screen">
-                <div className="w-full max-w-sm flex flex-col items-center md:items-start text-center md:text-left">
-                    <h1 className="mb-6 font-display text-4xl md:text-5xl font-bold leading-tight text-white tracking-tight">
-                        All-in-one<br />
-                        Real time Polling
-                    </h1>
-                    <p className="mb-10 text-gray-400 text-lg leading-relaxed">
-                        Validate your startup ideas instantly. Get real feedback from real users before you build.
-                    </p>
+            {/* Right Side: Login Form */}
+            <div className="relative z-30 w-full md:w-[480px] lg:w-[600px] shrink-0 flex flex-col justify-center items-center bg-zinc-900/30 backdrop-blur-3xl border-l border-white/5 md:min-h-screen p-8 md:p-16 shadow-2xl shadow-black/50">
+                <div className="w-full max-w-sm space-y-8 animate-fade-in">
 
-                    <div className="mb-10 flex gap-2 md:self-start">
-                        <span className="h-2 w-2 rounded-full bg-gray-600" />
-                        <span className="h-2 w-8 rounded-full bg-white" />
-                        <span className="h-2 w-2 rounded-full bg-gray-600" />
+                    {/* Header */}
+                    <div className="space-y-4 text-center md:text-left">
+                        <div className="inline-flex items-center justify-center md:justify-start gap-2 mb-4">
+                            <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-white to-zinc-400 shadow-lg shadow-white/10" />
+                            <span className="font-heading font-bold text-xl tracking-tight">Debrief</span>
+                        </div>
+                        <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight text-white leading-[1.1]">
+                            Validate ideas <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500">before you build.</span>
+                        </h1>
+                        <p className="text-lg text-muted-foreground leading-relaxed">
+                            Stop guessing. Get instant, honest feedback from real users in seconds.
+                        </p>
                     </div>
 
-                    <Button
-                        className="w-full h-14 rounded-full text-lg font-semibold bg-[#4945FF] hover:bg-[#3d39e6] text-white shadow-lg shadow-blue-900/20 border-0"
-                        onClick={handleSignIn}
-                    >
-                        Get Started
-                    </Button>
+                    {/* Divider */}
+                    <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+                    {/* Action */}
+                    <div className="space-y-4">
+                        <Button
+                            size="lg"
+                            className="w-full text-base font-semibold h-12 shadow-xl shadow-white/5 hover:shadow-white/10 transition-all duration-300"
+                            onClick={handleSignIn}
+                        >
+                            <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+                                <path
+                                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                    fill="#4285F4"
+                                />
+                                <path
+                                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                    fill="#34A853"
+                                />
+                                <path
+                                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                                    fill="#FBBC05"
+                                />
+                                <path
+                                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                                    fill="#EA4335"
+                                />
+                            </svg>
+                            Continue with Google
+                        </Button>
+                        <p className="text-xs text-center text-muted-foreground/60">
+                            By continuing, you agree to our Terms of Service and Privacy Policy.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

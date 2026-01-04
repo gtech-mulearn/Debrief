@@ -3,6 +3,7 @@
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"
+import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
@@ -38,7 +39,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/60 backdrop-blur-sm",
         className
       )}
       {...props}
@@ -46,12 +47,38 @@ function DialogOverlay({
   )
 }
 
+const dialogContentVariants = cva(
+  "fixed top-[50%] left-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl p-6 shadow-2xl duration-200 outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+  {
+    variants: {
+      variant: {
+        default: "bg-[#09090b] border border-white/10 ring-1 ring-white/5 shadow-black/50",
+        glass: "bg-black/40 backdrop-blur-2xl border border-white/10 ring-1 ring-white/5 shadow-black/20",
+        simple: "bg-background border border-border shadow-lg",
+      },
+      size: {
+        default: "max-w-[calc(100%-2rem)] sm:max-w-lg",
+        sm: "max-w-[calc(100%-2rem)] sm:max-w-sm",
+        lg: "max-w-[calc(100%-2rem)] sm:max-w-2xl",
+        xl: "max-w-[calc(100%-2rem)] sm:max-w-4xl",
+        full: "max-w-[calc(100%-2rem)] h-[90vh] sm:max-w-[90vw]",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  variant,
+  size,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & {
+}: React.ComponentProps<typeof DialogPrimitive.Content> & VariantProps<typeof dialogContentVariants> & {
   showCloseButton?: boolean
 }) {
   return (
@@ -59,10 +86,7 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
-        className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 outline-none sm:max-w-lg",
-          className
-        )}
+        className={cn(dialogContentVariants({ variant, size, className }))}
         {...props}
       >
         {children}
@@ -110,7 +134,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-lg leading-none font-semibold", className)}
+      className={cn("text-lg leading-none font-semibold font-heading tracking-tight", className)}
       {...props}
     />
   )

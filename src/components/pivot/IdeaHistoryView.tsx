@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { IdeaVersionWithMetadata } from "@/types/database";
 import { formatDistanceToNow } from "@/lib/utils";
@@ -19,7 +20,7 @@ interface IdeaHistoryViewProps {
 export function IdeaHistoryView({ version, onClose }: IdeaHistoryViewProps) {
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent variant="glass" className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <DialogTitle>
@@ -57,11 +58,11 @@ export function IdeaHistoryView({ version, onClose }: IdeaHistoryViewProps) {
                 <h3 className="text-sm font-medium text-muted-foreground mb-2">
                   Reason for Pivot
                 </h3>
-                <div className="rounded-lg bg-muted/50 p-4">
+                <Card variant="glass" className="p-4 border-white/5 bg-white/5">
                   <p className="text-sm text-foreground whitespace-pre-wrap">
                     {version.pivot_reason}
                   </p>
-                </div>
+                </Card>
               </div>
             </>
           )}

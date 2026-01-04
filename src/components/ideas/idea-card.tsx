@@ -1,43 +1,49 @@
-/**
- * Idea Card Component
- * 
- * Unique curved shape design with vote buttons in the notch.
- * Uses hooks only - no direct API calls.
- */
-
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { useVote, useRemoveVote, useAuth } from "@/hooks";
-import type { IdeaWithDetails } from "@/types/database";
 import { formatDistanceToNow, getInitials } from "@/lib/utils";
+import { useVote, useRemoveVote } from "@/hooks/use-votes";
+import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { ArrowUpRight, MessageSquare, TrendingUp, Clock } from "lucide-react";
 
 interface IdeaCardProps {
-    idea: IdeaWithDetails;
-    variant?: "mint" | "coral" | "default";
+    idea: {
+        id: string;
+        title: string;
+        description: string;
+        created_at: string;
+        user_id: string;
+        author?: {
+            full_name: string;
+            avatar_url?: string;
+        } | null;
+        upvotes_count?: number;
+        downvotes_count?: number;
+        comments_count?: number;
+        user_vote?: {
+            value: number;
+        } | null;
+    };
+    variant?: "default" | "mint" | "coral" | "lime" | "glass";
 }
 
-export function IdeaCard({ idea, variant = "default" }: IdeaCardProps) {
+export function IdeaCard({ idea, variant = "glass" }: IdeaCardProps) {
     const router = useRouter();
-    const { isAuthenticated, loading: authLoading } = useAuth();
+    const { user, isAuthenticated, loading: authLoading } = useAuth();
     const { mutate: vote, isPending: isVoting } = useVote(idea.id);
     const { mutate: removeVote, isPending: isRemoving } = useRemoveVote(idea.id);
 
-    // Don't render if idea doesn't have a valid ID
-    if (!idea?.id) {
-        return null;
-    }
-
     const userVote = idea.user_vote?.value;
-    const upvotes = idea.upvotes_count ?? 0;
-    const downvotes = idea.downvotes_count ?? 0;
-    const netVotes = upvotes - downvotes;
+    const netVotes = (idea.upvotes_count ?? 0) - (idea.downvotes_count ?? 0);
+    const isPositive = netVotes > 0;
 
-    const handleUpvote = (e: React.MouseEvent) => {
+    const handleVote = (e: React.MouseEvent, value: 1 | -1) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -45,136 +51,130 @@ export function IdeaCard({ idea, variant = "default" }: IdeaCardProps) {
 
         if (!isAuthenticated) {
             toast.info("Please sign in to vote");
-            router.push(`/login?redirectTo=/`);
+            router.push(`/login?redirectTo=/ideas/${idea.id}`);
             return;
         }
 
-        if (userVote === 1) {
+        if (userVote === value) {
             removeVote();
         } else {
-            vote(1);
+            vote(value);
         }
-    };
-
-    const handleDownvote = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (authLoading) return;
-
-        if (!isAuthenticated) {
-            toast.info("Please sign in to vote");
-            router.push(`/login?redirectTo=/`);
-            return;
-        }
-
-        if (userVote === -1) {
-            removeVote();
-        } else {
-            vote(-1);
-        }
-    };
-
-    const authorName = idea.author?.full_name || "Anonymous";
-    const authorAvatar = idea.author?.avatar_url || undefined;
-    const initials = getInitials(authorName);
-    const timeAgo = idea.created_at ? formatDistanceToNow(idea.created_at) : "";
-    const commentsCount = idea.comments_count ?? 0;
-
-    const getVariantClasses = () => {
-        switch (variant) {
-            case "mint":
-                return "bg-gradient-to-br from-mint to-mint/80 border-transparent text-primary-foreground";
-            case "coral":
-                return "bg-gradient-to-br from-coral to-coral/80 border-transparent text-primary-foreground";
-            case "default":
-            default:
-                return "bg-card border-border text-card-foreground";
-        }
-    };
-
-    const getTextClasses = () => {
-        if (variant !== "default") return "text-primary-foreground";
-        return "text-muted-foreground";
     };
 
     return (
-        <div className={`group relative flex flex-col overflow-hidden rounded-[2.5rem] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${getVariantClasses()}`}>
+        <Link href={`/ideas/${idea.id}`} className="group block h-full">
+            <Card variant="glass-shimmer" className="relative h-full flex flex-col transition-all duration-500 hover:-translate-y-1">
 
-            {/* Card Content */}
-            <Link href={`/ideas/${idea.id}`} className="flex-1 px-8 pt-8 pb-20">
-                {/* Header */}
-                <div className="mb-6 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 border-2 border-white/10 shadow-sm">
-                            <AvatarImage src={authorAvatar} />
-                            <AvatarFallback className={variant !== "default" ? "bg-black/10 text-primary-foreground" : ""}>{initials}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col">
-                            <span className={`text-sm font-bold tracking-tight ${variant !== "default" ? "text-primary-foreground" : "text-foreground"}`}>
-                                {authorName}
-                            </span>
-                            {timeAgo && (
-                                <span className={`text-xs font-medium opacity-80 ${getTextClasses()}`}>
-                                    {timeAgo}
-                                </span>
+                {/* Ambient Glow Effects */}
+                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#7877c6]/10 blur-[80px] transition-all duration-700 group-hover:bg-[#7877c6]/20" />
+
+                {/* Content Container */}
+                <div className="relative z-10 flex flex-1 flex-col p-6 md:p-8">
+
+                    {/* Header: Author & Status */}
+                    <div className="mb-6 flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border border-white/10 shadow-sm">
+                                <AvatarImage src={idea.author?.avatar_url || undefined} className="object-cover" />
+                                <AvatarFallback className="bg-white/5 text-xs text-muted-foreground">{getInitials(idea.author?.full_name)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-medium text-foreground/90 line-clamp-1">{idea.author?.full_name || "Anonymous"}</span>
+                                <span className="text-xs text-muted-foreground">{formatDistanceToNow(idea.created_at)} ago</span>
+                            </div>
+                        </div>
+
+                        {/* Status Badge (Mocking 'New' or 'Trending' logic for visual) */}
+                        <div className="flex gap-2">
+                            {(netVotes > 5) && (
+                                <Badge variant="default" className="gap-1.5 px-3 py-1 rounded-full bg-[#7877c6]/10 text-[#7877c6] border border-[#7877c6]/20 backdrop-blur-md">
+                                    <TrendingUp className="h-3 w-3" />
+                                    Trending
+                                </Badge>
+                            )}
+                            {!isPositive && (
+                                <Badge variant="glass" className="gap-1.5 px-3 py-1 rounded-full text-muted-foreground bg-white/5 border-white/5 shadow-none">
+                                    <Clock className="h-3 w-3" />
+                                    New
+                                </Badge>
                             )}
                         </div>
                     </div>
+
+                    {/* Body: Title & Excerpt */}
+                    <div className="flex-1 space-y-3">
+                        <h3 className="font-heading text-2xl font-bold leading-tight text-foreground transition-colors group-hover:text-primary">
+                            {idea.title}
+                        </h3>
+                        <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground/80 group-hover:text-muted-foreground/90 transition-colors">
+                            {idea.description}
+                        </p>
+                    </div>
+
                 </div>
 
-                {/* Title */}
-                <h3 className={`font-display text-3xl font-bold leading-tight tracking-tight ${variant !== "default" ? "text-primary-foreground" : "text-foreground"} mb-8 pr-4`}>
-                    {idea.title || "Untitled"}
-                </h3>
+                {/* Footer: Stats & Actions */}
+                <div className="relative z-10 mt-auto border-t border-white/5 bg-white/[0.02] p-4 backdrop-blur-sm transition-colors group-hover:bg-white/[0.04]">
+                    <div className="flex items-center justify-between">
 
-                {/* Action Section */}
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="ghost"
-                        className={`h-12 rounded-full px-6 text-sm font-semibold backdrop-blur-sm transition-all hover:scale-105 ${variant !== "default" ? "bg-black/20 text-primary-foreground hover:bg-black/30" : "bg-muted text-foreground hover:bg-muted/80"}`}
-                    >
-                        Write Comment
-                    </Button>
+                        {/* Vote Controls */}
+                        <div className="flex items-center gap-1 rounded-full bg-black/20 p-1 ring-1 ring-white/5 backdrop-blur-md">
+                            <button
+                                onClick={(e) => handleVote(e, 1)}
+                                disabled={isVoting || isRemoving || authLoading}
+                                className={cn(
+                                    "flex h-8 w-10 items-center justify-center rounded-full transition-all active:scale-95 disabled:opacity-50",
+                                    userVote === 1
+                                        ? "bg-emerald-500/20 text-emerald-400 shadow-[0_0_10px_-2px_rgba(16,185,129,0.3)]"
+                                        : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                                )}
+                            >
+                                <ArrowUpRight className="h-4 w-4" />
+                            </button>
 
-                    {commentsCount > 0 && (
-                        <span className={`flex h-12 min-w-12 items-center justify-center rounded-full px-3 text-sm font-bold backdrop-blur-sm ${variant !== "default" ? "bg-black/10 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-                            {commentsCount} <span className="ml-1 text-[10px] opacity-60">msg</span>
-                        </span>
-                    )}
+                            <span className={cn(
+                                "min-w-[1.5rem] text-center text-sm font-bold tabular-nums",
+                                netVotes > 0 ? "text-emerald-400" : netVotes < 0 ? "text-rose-400" : "text-muted-foreground"
+                            )}>
+                                {netVotes > 0 ? `+${netVotes}` : netVotes}
+                            </span>
+
+                            <button
+                                onClick={(e) => handleVote(e, -1)}
+                                disabled={isVoting || isRemoving || authLoading}
+                                className={cn(
+                                    "flex h-8 w-10 items-center justify-center rounded-full transition-all active:scale-95 disabled:opacity-50",
+                                    userVote === -1
+                                        ? "bg-rose-500/20 text-rose-400 shadow-[0_0_10px_-2px_rgba(244,63,94,0.3)]"
+                                        : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                                )}
+                            >
+                                <ArrowUpRight className={cn("h-4 w-4 rotate-135")} />
+                            </button>
+                        </div>
+
+                        {/* Comments & Action */}
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                <MessageSquare className="h-4 w-4 opacity-70" />
+                                <span>{idea.comments_count || 0}</span>
+                            </div>
+
+                            <div className="flex items-center gap-1 text-xs font-bold text-primary opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
+                                View
+                                <ArrowUpRight className="h-3 w-3" />
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
-            </Link>
-
-            {/* Vote Notch (Bottom Right) */}
-            <div className="absolute bottom-4 right-4 z-20">
-                <div className={`flex flex-col items-center gap-1 rounded-[1.5rem] py-3 px-2 shadow-sm ring-[12px] ring-background ${variant === 'default' ? 'bg-muted text-foreground ring-card' : 'bg-[#1a1a1a] text-white'}`}>
-                    <button
-                        onClick={handleUpvote}
-                        disabled={isVoting || isRemoving || authLoading}
-                        className={`group/btn flex h-10 w-10 items-center justify-center rounded-full transition-all hover:bg-white/10 active:scale-95 ${userVote === 1 ? "bg-green-500/20 text-green-400" : ""}`}
-                        aria-label="Upvote"
-                    >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`transition-transform group-hover/btn:-translate-y-0.5 ${userVote === 1 ? "fill-current" : ""}`}>
-                            <path d="M18 15l-6-6-6 6" />
-                        </svg>
-                    </button>
-
-                    <span className="font-display text-base font-bold min-h-6 flex items-center">
-                        {netVotes}
-                    </span>
-
-                    <button
-                        onClick={handleDownvote}
-                        disabled={isVoting || isRemoving || authLoading}
-                        className={`group/btn flex h-10 w-10 items-center justify-center rounded-full transition-all hover:bg-white/10 active:scale-95 ${userVote === -1 ? "bg-red-500/20 text-red-400" : ""}`}
-                        aria-label="Downvote"
-                    >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`transition-transform group-hover/btn:translate-y-0.5 ${userVote === -1 ? "fill-current" : ""}`}>
-                            <path d="M6 9l6 6 6-6" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
+            </Card>
+        </Link>
     );
+}
+
+// Helper for variant classes kept for compatibility but not used
+function getVariantClasses(variant: string) {
+    return "";
 }

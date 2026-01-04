@@ -105,9 +105,9 @@ export default function NewIdeaPage() {
     return (
         <>
             <Header />
-            <main className="mx-auto max-w-7xl px-6 py-8">
+            <main className="mx-auto max-w-7xl px-6 pt-32 pb-8">
                 <div className="mb-8">
-                    <h1 className="font-display text-2xl font-bold text-foreground mb-2">New poll</h1>
+                    <h1 className="font-display text-2xl font-bold text-foreground mb-2">New Idea</h1>
                     <p className="font-sans text-base text-muted-foreground">Share your idea with the community</p>
                 </div>
 
@@ -158,7 +158,7 @@ export default function NewIdeaPage() {
                         </Button>
                         <Button
                             type="submit"
-                            variant="mint"
+                            variant="shimmer-primary"
                             size="pill"
                             disabled={isPending}
                         >

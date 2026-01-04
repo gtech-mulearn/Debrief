@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useBackIdea } from "@/hooks/use-social-validation";
 import { Switch } from "@/components/ui/switch";
 import { Coins, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface BackingDialogProps {
     ideaId: string;
@@ -53,7 +54,7 @@ export function BackingDialog({ ideaId, trigger }: BackingDialogProps) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 {trigger || (
-                    <Button variant="default" size="lg" className="w-full sm:w-auto gap-2 font-bold bg-mint-500 hover:bg-mint-600 text-white shadow-lg shadow-mint-500/20">
+                    <Button variant="shimmer-primary" size="lg" className="w-full sm:w-auto gap-2 font-bold">
                         <Coins className="h-5 w-5" />
                         Back this Idea
                     </Button>
@@ -61,7 +62,10 @@ export function BackingDialog({ ideaId, trigger }: BackingDialogProps) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Back this Idea</DialogTitle>
+                    <DialogTitle className="flex items-center gap-2 text-xl">
+                        <Coins className="h-5 w-5 text-primary" />
+                        Back this Idea
+                    </DialogTitle>
                     <DialogDescription>
                         Pledge your support to show the founder there is real market demand. This is a non-binding pledge.
                     </DialogDescription>
@@ -69,26 +73,34 @@ export function BackingDialog({ ideaId, trigger }: BackingDialogProps) {
                 <div className="grid gap-6 py-4">
                     <div className="space-y-3">
                         <Label>Select Pledge Amount</Label>
-                        <div className="flex gap-2">
-                            {presetAmounts.map((amount) => (
-                                <Button
-                                    key={amount}
-                                    variant={parseInt(pledgeAmount) === amount ? "default" : "outline"}
-                                    onClick={() => setPledgeAmount(amount.toString())}
-                                    className="flex-1"
-                                >
-                                    ₹{amount}
-                                </Button>
-                            ))}
+                        <div className="grid grid-cols-4 gap-2">
+                            {presetAmounts.map((amount) => {
+                                const isSelected = parseInt(pledgeAmount) === amount;
+                                return (
+                                    <button
+                                        key={amount}
+                                        type="button"
+                                        onClick={() => setPledgeAmount(amount.toString())}
+                                        className={cn(
+                                            "flex h-10 items-center justify-center rounded-md border text-sm font-medium transition-all hover:scale-105 active:scale-95",
+                                            isSelected
+                                                ? "border-primary/50 bg-primary/10 text-primary shadow-[0_0_10px_-2px_rgba(255,255,255,0.1)]"
+                                                : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                                        )}
+                                    >
+                                        ₹{amount}
+                                    </button>
+                                );
+                            })}
                         </div>
-                        <div className="relative">
+                        <div className="relative mt-2">
                             <span className="absolute left-3 top-2.5 text-muted-foreground">₹</span>
                             <Input
                                 type="number"
                                 placeholder="Custom Amount"
                                 value={pledgeAmount}
                                 onChange={(e) => setPledgeAmount(e.target.value)}
-                                className="pl-6"
+                                className="pl-6 bg-white/5 border-white/10 focus-visible:ring-primary/50"
                                 min="0"
                             />
                         </div>
@@ -100,17 +112,22 @@ export function BackingDialog({ ideaId, trigger }: BackingDialogProps) {
                             placeholder="I'd buy this if..."
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
-                            className="resize-none"
+                            className="resize-none bg-white/5 border-white/10 focus-visible:ring-primary/50 min-h-[100px]"
                         />
                     </div>
 
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 rounded-lg border border-white/5 bg-white/[0.02] p-3">
                         <Switch id="anonymous" checked={isAnonymous} onCheckedChange={setIsAnonymous} />
-                        <Label htmlFor="anonymous">Back Anonymously</Label>
+                        <Label htmlFor="anonymous" className="cursor-pointer">Back Anonymously</Label>
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleBack} disabled={isPending || !pledgeAmount} className="w-full">
+                    <Button
+                        onClick={handleBack}
+                        disabled={isPending || !pledgeAmount}
+                        variant="shimmer-primary"
+                        className="w-full font-bold"
+                    >
                         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Confirm Pledge
                     </Button>

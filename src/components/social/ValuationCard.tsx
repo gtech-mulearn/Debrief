@@ -1,9 +1,10 @@
 "use client";
 
 import { useIdeaBackers } from "@/hooks/use-social-validation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, TrendingUp } from "lucide-react";
+import { Users, TrendingUp, DollarSign } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ValuationCardProps {
     ideaId: string;
@@ -12,25 +13,22 @@ interface ValuationCardProps {
 export function ValuationCard({ ideaId }: ValuationCardProps) {
     const { data: backersData, isLoading, isError } = useIdeaBackers(ideaId);
 
-    console.log('ValuationCard debug:', { backersData, isLoading, isError });
-
     if (isLoading) {
         return (
-            <Card className="w-full animate-pulse h-48 bg-muted/50" />
+            <div className="w-full animate-pulse h-48 rounded-3xl bg-white/5 border border-white/5" />
         );
     }
 
     if (isError || !backersData) {
         return (
-            <Card className="w-full h-48 bg-muted/50 flex items-center justify-center">
+            <div className="w-full h-48 rounded-3xl bg-[#09090b] border border-white/5 flex flex-col items-center justify-center p-6 text-center">
+                <DollarSign className="h-8 w-8 text-muted-foreground mb-2 opacity-20" />
                 <p className="text-sm text-muted-foreground">Unable to load valuation data</p>
-            </Card>
+            </div>
         );
     }
 
     const { meta, data: backers } = backersData;
-
-    console.log('Extracted data:', { meta, backers, total_pledged: meta?.total_pledged });
 
     // Format currency
     const formattedValuation = new Intl.NumberFormat('en-IN', {
@@ -39,51 +37,67 @@ export function ValuationCard({ ideaId }: ValuationCardProps) {
         maximumFractionDigits: 0,
     }).format(meta?.total_pledged || 0);
 
-    console.log('Formatted valuation:', formattedValuation);
-
     return (
-        <Card className="w-full border-mint-500/20 bg-mint-50/50 dark:bg-mint-950/10">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-mint-500" />
-                    Implied Valuation (Demand)
-                </CardTitle>
-                <div className="text-4xl font-bold text-foreground font-display">
-                    {formattedValuation}
+        <Card variant="glass-shimmer" className="relative w-full overflow-hidden">
+            {/* Ambient Background Glow */}
+            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#7877c6]/10 blur-[80px]" />
+
+            <div className="relative z-10 p-6 md:p-8">
+                {/* Header Section */}
+                <div className="mb-6">
+                    <div className="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                        <TrendingUp className="h-4 w-4" />
+                        <span>Implied Valuation</span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                        <span className="font-heading text-4xl font-bold tracking-tight text-white md:text-5xl">
+                            {formattedValuation}
+                        </span>
+                        <span className="text-sm font-medium text-muted-foreground">
+                            (Demand)
+                        </span>
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground/60">
+                        Based on {meta?.backers_count || 0} backers pledging non-binding support.
+                    </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                    Based on {meta?.backers_count || 0} backers pledging non-binding support.
-                </p>
-            </CardHeader>
-            <CardContent>
-                <div className="mt-4">
-                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <Users className="h-4 w-4" />
+
+                {/* Backers List Section */}
+                <div className="space-y-4">
+                    <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        <Users className="h-3 w-3" />
                         Recent Backers
                     </h4>
+
                     {!backers || backers.length === 0 ? (
-                        <p className="text-sm text-muted-foreground italic">Be the first to back this idea!</p>
+                        <div className="rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-center">
+                            <p className="text-sm italic text-muted-foreground">Be the first to back this idea!</p>
+                        </div>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {backers.slice(0, 5).map((backer) => (
-                                <div key={backer.id} className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8">
+                                <div
+                                    key={backer.id}
+                                    className="group flex items-center gap-3 rounded-xl border border-transparent bg-white/2 p-2 transition-all hover:bg-white/5 hover:border-white/5"
+                                >
+                                    <Avatar className="h-8 w-8 ring-1 ring-white/10">
                                         <AvatarImage src={backer.is_anonymous ? undefined : backer.user?.avatar_url || undefined} />
-                                        <AvatarFallback>
+                                        <AvatarFallback className="bg-white/5 text-[10px] text-muted-foreground">
                                             {backer.is_anonymous ? "?" : backer.user?.full_name?.[0] || "U"}
                                         </AvatarFallback>
                                     </Avatar>
+
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-sm font-medium truncate">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="truncate text-sm font-medium text-foreground/90 group-hover:text-foreground">
                                                 {backer.is_anonymous ? "Anonymous Backer" : backer.user?.full_name || "User"}
                                             </p>
-                                            <span className="text-sm font-semibold text-mint-600 dark:text-mint-400">
-                                                ₹{backer.pledge_amount}
+                                            <span className="shrink-0 rounded-md bg-[#7877c6]/10 px-2 py-0.5 text-xs font-bold text-[#fafafa] border border-[#7877c6]/20">
+                                                ₹{backer.pledge_amount.toLocaleString()}
                                             </span>
                                         </div>
                                         {backer.comment && (
-                                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                                            <p className="truncate text-xs text-muted-foreground/60 italic max-w-[200px]">
                                                 "{backer.comment}"
                                             </p>
                                         )}
@@ -93,7 +107,7 @@ export function ValuationCard({ ideaId }: ValuationCardProps) {
                         </div>
                     )}
                 </div>
-            </CardContent>
+            </div>
         </Card>
     );
 }

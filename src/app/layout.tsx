@@ -31,8 +31,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${bricolage.variable} ${poppins.variable} antialiased`}
+        className={`${bricolage.variable} ${poppins.variable} antialiased min-h-screen flex flex-col relative`}
       >
+        <div className="fixed inset-0 z-[-1] bg-page-gradient pointer-events-none" />
         <QueryProvider>
           {children}
           <Toaster />

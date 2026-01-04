@@ -22,7 +22,7 @@ export default function ProfilePage() {
         return (
             <div className="min-h-screen bg-background">
                 <Header />
-                <main className="mx-auto max-w-4xl px-6 py-12">
+                <main className="mx-auto max-w-4xl px-6 pt-32 pb-12">
                     <div className="animate-pulse space-y-8">
                         <div className="h-32 w-full bg-muted rounded-xl" />
                         <div className="h-64 w-full bg-muted rounded-xl" />
@@ -37,7 +37,7 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen bg-background">
             <Header />
-            <main className="mx-auto max-w-4xl px-6 py-12 space-y-8">
+            <main className="mx-auto max-w-4xl px-6 pt-32 pb-12 space-y-8">
                 {/* Profile Header */}
                 <div className="flex items-center gap-6">
                     <Avatar className="h-24 w-24 border-2 border-border">

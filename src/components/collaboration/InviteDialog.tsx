@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Mail, UserPlus, Shield, Eye, Edit } from "lucide-react";
+import { Loader2, Mail, UserPlus, Shield, Eye, Edit, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -23,16 +23,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/dropdown-menu";
 import { inviteCollaboratorSchema } from "@/lib/validations/collaborators";
 import { useInviteCollaborator } from "@/hooks/use-collaborators";
 import type { InviteCollaboratorRequest } from "@/types/api";
+import { cn } from "@/lib/utils";
 
 interface InviteDialogProps {
   ideaId: string;
@@ -60,7 +54,7 @@ const ROLE_DESCRIPTIONS = {
 
 export function InviteDialog({ ideaId, open, onOpenChange }: InviteDialogProps) {
   const [selectedRole, setSelectedRole] = useState<"viewer" | "editor" | "admin">("editor");
-  
+
   const {
     register,
     handleSubmit,
@@ -73,7 +67,7 @@ export function InviteDialog({ ideaId, open, onOpenChange }: InviteDialogProps) 
     },
   });
 
-  const { mutate: invite, isPending, isError, error } = useInviteCollaborator(ideaId);
+  const { mutate: invite, isPending } = useInviteCollaborator(ideaId);
 
   const onSubmit = (data: InviteCollaboratorRequest) => {
     invite(
@@ -105,10 +99,10 @@ export function InviteDialog({ ideaId, open, onOpenChange }: InviteDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <UserPlus className="h-5 w-5 text-primary" />
             Invite Team Member
           </DialogTitle>
           <DialogDescription>
@@ -117,7 +111,7 @@ export function InviteDialog({ ideaId, open, onOpenChange }: InviteDialogProps) 
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
           {/* Email Input */}
           <div className="space-y-2">
             <Label htmlFor="email" className="flex items-center gap-2">
@@ -132,6 +126,7 @@ export function InviteDialog({ ideaId, open, onOpenChange }: InviteDialogProps) 
               disabled={isPending}
               aria-invalid={!!errors.email}
               aria-describedby={errors.email ? "email-error" : undefined}
+              className="bg-white/5 border-white/10"
             />
             {errors.email && (
               <p id="email-error" className="text-sm text-red-600" role="alert">
@@ -143,53 +138,45 @@ export function InviteDialog({ ideaId, open, onOpenChange }: InviteDialogProps) 
           {/* Role Selection */}
           <div className="space-y-3">
             <Label>Permission Level</Label>
-            <div className="space-y-2">
+            <div className="grid gap-3">
               {(Object.keys(ROLE_DESCRIPTIONS) as Array<keyof typeof ROLE_DESCRIPTIONS>).map(
                 (role) => {
                   const { icon: Icon, label, description } = ROLE_DESCRIPTIONS[role];
+                  const isSelected = selectedRole === role;
                   return (
                     <button
                       key={role}
                       type="button"
                       onClick={() => setSelectedRole(role)}
                       disabled={isPending}
-                      className={`
-                        w-full flex items-start gap-3 p-3 rounded-lg border-2 transition-all
-                        ${
-                          selectedRole === role
-                            ? "border-blue-600 bg-blue-50 dark:bg-blue-950"
-                            : "border-gray-200 hover:border-gray-300 dark:border-gray-700"
-                        }
-                        ${isPending ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-                      `}
-                      aria-pressed={selectedRole === role}
+                      className={cn(
+                        "relative flex w-full items-start gap-4 rounded-xl border p-4 text-left transition-all",
+                        isSelected
+                          ? "border-primary bg-primary/10 shadow-[0_0_15px_-5px_rgba(var(--primary),0.2)]"
+                          : "border-white/10 bg-[#09090b] hover:border-white/20 hover:bg-white/5",
+                        isPending && "cursor-not-allowed opacity-50"
+                      )}
+                      aria-pressed={isSelected}
                     >
-                      <Icon
-                        className={`h-5 w-5 mt-0.5 ${
-                          selectedRole === role ? "text-blue-600" : "text-gray-500"
-                        }`}
-                      />
-                      <div className="flex-1 text-left">
-                        <div className="font-medium">{label}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className={cn(
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border transition-colors",
+                        isSelected ? "border-primary/20 bg-primary/20 text-primary" : "border-white/10 bg-white/5 text-muted-foreground"
+                      )}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+
+                      <div className="flex-1 space-y-1">
+                        <div className={cn("font-semibold", isSelected ? "text-primary" : "text-foreground")}>
+                          {label}
+                        </div>
+                        <div className="text-xs text-muted-foreground leading-relaxed">
                           {description}
                         </div>
                       </div>
-                      {selectedRole === role && (
-                        <div className="h-5 w-5 rounded-full bg-blue-600 flex items-center justify-center">
-                          <svg
-                            className="h-3 w-3 text-white"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
+
+                      {isSelected && (
+                        <div className="absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                          <Check className="h-3 w-3" />
                         </div>
                       )}
                     </button>
@@ -199,16 +186,16 @@ export function InviteDialog({ ideaId, open, onOpenChange }: InviteDialogProps) 
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={handleClose}
               disabled={isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending} className="font-semibold">
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Send Invitation
             </Button>

@@ -1,7 +1,6 @@
-import { cva } from "class-variance-authority";
+
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
-import { Lightbulb, Target, Search, FlaskConical, DollarSign, Award } from "lucide-react"; // Assuming these icons are imported
+import { Check, Lightbulb, Target, Search, FlaskConical, DollarSign, Award } from "lucide-react";
 
 export type LevelStatus = "locked" | "in_progress" | "completed";
 
@@ -23,72 +22,70 @@ export function JourneyStepper({ currentLevel, selectedLevel, onSelectLevel, cla
     ];
 
     return (
-        <div className={cn("w-full pb-4", className)}>
-            <div className="flex items-start justify-between gap-2 overflow-x-auto md:overflow-visible px-1">
-                {steps.map((step, index) => {
-                    const status =
-                        index < currentLevel
-                            ? "completed"
-                            : index === currentLevel
-                                ? "in_progress"
-                                : "locked";
+        <div className={cn("w-full rounded-3xl border border-white/5 bg-black/20 p-6 backdrop-blur-sm", className)}>
+            <div className="relative flex items-start justify-between">
+                {/* Background Line */}
+                <div className="absolute left-0 top-5 h-0.5 w-full -translate-y-1/2 bg-white/5" />
 
+                {steps.map((step, index) => {
                     const isCompleted = index < currentLevel;
                     const isCurrent = index === currentLevel;
-                    // Unlock Level 1 if currentLevel is 0 (Spark is always done)
                     const isLocked = index > currentLevel && !(index === 1 && currentLevel === 0);
                     const isSelected = step.level === selectedLevel;
 
                     return (
-                        <div key={step.level} className="group relative flex flex-1 flex-col items-center px-2">
-                            {/* Connector Line */}
-                            {index !== 0 && (
-                                <div
-                                    className={cn(
-                                        "absolute top-5 -left-[50%] right-[50%] h-[2px] w-full -translate-y-1/2",
-                                        index <= currentLevel ? "bg-primary" : "bg-border"
-                                    )}
-                                />
+                        <div key={step.level} className="relative flex flex-1 flex-col items-center">
+                            {/* Active Line Progress (overlaid on background line) */}
+                            {index < steps.length - 1 && (index < currentLevel) && (
+                                <div className="absolute left-[50%] top-5 h-0.5 w-full -translate-y-1/2 bg-primary/50" />
                             )}
 
-                            {/* Step Button */}
                             <button
                                 onClick={() => !isLocked && onSelectLevel(step.level)}
                                 disabled={isLocked}
                                 className={cn(
-                                    "group relative z-10 flex flex-col items-center gap-2 transition-all duration-200 outline-none",
-                                    isLocked ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:opacity-80",
-                                    isSelected ? "scale-110" : ""
+                                    "group relative z-10 flex flex-col items-center gap-3 transition-all duration-300 outline-none",
+                                    isLocked ? "cursor-not-allowed opacity-40 grayscale" : "cursor-pointer hover:opacity-100",
+                                    isSelected ? "scale-105" : "scale-100"
                                 )}
                             >
                                 {/* Circle Indicator */}
                                 <div
                                     className={cn(
-                                        "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300",
+                                        "flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-500",
                                         isCompleted
-                                            ? "border-primary bg-primary text-primary-foreground"
+                                            ? "border-primary/50 bg-primary text-primary-foreground shadow-[0_0_15px_-3px_rgba(var(--primary),0.5)]"
                                             : isCurrent
-                                                ? "border-primary bg-background text-primary ring-4 ring-primary/20"
-                                                : "border-muted bg-muted text-muted-foreground",
-                                        isSelected && !isCompleted && !isCurrent ? "ring-2 ring-primary ring-offset-2" : ""
+                                                ? "border-primary bg-primary/10 text-primary ring-4 ring-primary/10 shadow-[0_0_20px_-5px_rgba(var(--primary),0.4)]"
+                                                : "border-white/10 bg-[#09090b] text-muted-foreground hover:border-white/20",
+                                        isSelected && !isCompleted && !isCurrent ? "ring-2 ring-primary ring-offset-2 ring-offset-black" : ""
                                     )}
                                 >
                                     {isCompleted ? (
                                         <Check className="h-5 w-5" />
                                     ) : (
-                                        <step.icon className="h-5 w-5" />
+                                        <step.icon className="h-4 w-4" />
                                     )}
                                 </div>
+
                                 {/* Text Labels */}
-                                <span
-                                    className={cn(
-                                        "text-xs font-medium transition-colors duration-200 mt-2",
-                                        isCompleted || isCurrent ? "text-foreground" : "text-muted-foreground",
-                                        isSelected ? "font-bold text-primary" : ""
-                                    )}
-                                >
-                                    {step.title}
-                                </span>
+                                <div className="flex flex-col items-center gap-0.5">
+                                    <span
+                                        className={cn(
+                                            "text-xs font-semibold tracking-wide transition-colors duration-200",
+                                            isCompleted || isCurrent ? "text-foreground" : "text-muted-foreground",
+                                            isSelected ? "text-primary" : ""
+                                        )}
+                                    >
+                                        {step.title}
+                                    </span>
+                                    <span className={cn(
+                                        "text-[10px] uppercase tracking-wider",
+                                        isCurrent ? "text-primary/70" : "text-muted-foreground/50"
+                                    )}>
+                                        {step.description}
+                                    </span>
+                                </div>
                             </button>
                         </div>
                     );

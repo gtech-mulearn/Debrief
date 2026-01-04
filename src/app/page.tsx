@@ -16,11 +16,15 @@ export default function HomePage() {
   return (
     <>
       <Header />
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-8">
-          <h1 className="font-display text-4xl font-bold text-foreground mb-2">Debrief</h1>
-          <p className="font-sans text-base text-muted-foreground">Validate, refine, and prove your ideas.</p>
-        </div>
+      <main className="mx-auto w-full max-w-[1600px] px-4 md:px-8 pt-32 pb-12">
+        {/* <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
+          <div>
+            <h1 className="font-heading text-5xl font-bold tracking-tight text-foreground mb-4 drop-shadow-sm">Debrief</h1>
+            <p className="font-sans text-lg text-muted-foreground/80 max-w-2xl leading-relaxed">
+              Validate, refine, and prove your ideas with instant feedback from real users.
+            </p>
+          </div>
+        </div> */}
 
         <div className="flex justify-end mb-4">
           <SortDropdown value={sort} onChange={setSort} />

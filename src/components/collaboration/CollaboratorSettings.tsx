@@ -7,7 +7,7 @@
 "use client";
 
 import { useState } from "react";
-import { Users, UserPlus, MoreVertical, Trash2, Mail, Clock, CheckCircle2, XCircle, Copy, Link } from "lucide-react";
+import { Users, UserPlus, MoreVertical, Trash2, Mail, Clock, CheckCircle2, XCircle, Copy, Shield, Crown } from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCollaborators, useRemoveCollaborator } from "@/hooks/use-collaborators";
 import { InviteDialog } from "./InviteDialog";
+import { cn } from "@/lib/utils";
 import type { IdeaCollaboratorWithDetails } from "@/types/database";
 
 interface CollaboratorSettingsProps {
@@ -63,61 +64,50 @@ export function CollaboratorSettings({ ideaId, isOwner, currentUserId }: Collabo
     toast.success("Invite link copied to clipboard!");
   };
 
-  const getRoleColor = (role: string) => {
+  const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case "admin":
-        return "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300";
-      case "editor":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300";
-      case "viewer":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-      default:
-        return "bg-gray-100 text-gray-800";
+      case "admin": return "default";
+      case "editor": return "secondary";
+      default: return "outline";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "accepted":
-        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
-      case "pending":
-        return <Clock className="h-4 w-4 text-yellow-600" />;
-      case "declined":
-        return <XCircle className="h-4 w-4 text-red-600" />;
-      default:
-        return null;
+      case "accepted": return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
+      case "pending": return <Clock className="h-4 w-4 text-amber-500" />;
+      case "declined": return <XCircle className="h-4 w-4 text-rose-500" />;
+      default: return null;
     }
   };
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Team Members
-              </CardTitle>
-              <CardDescription>
-                Manage who can collaborate on this idea
-              </CardDescription>
-            </div>
-            {isOwner && (
-              <Button onClick={() => setInviteDialogOpen(true)} size="sm">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Invite
-              </Button>
-            )}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Users className="h-5 w-5 text-primary" />
+              Team Composition
+            </h3>
+            <p className="text-sm text-center text-muted-foreground w-full">
+              Manage your Avengers team.
+            </p>
           </div>
-        </CardHeader>
+          {isOwner && (
+            <Button onClick={() => setInviteDialogOpen(true)} size="sm" className="gap-2">
+              <UserPlus className="h-4 w-4" />
+              Invite Member
+            </Button>
+          )}
+        </div>
 
-        <CardContent>
+        <Card variant="glass" className="p-1 bg-[#09090b]/50">
           {isLoading && (
-            <div className="space-y-4">
+            <div className="space-y-2 p-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="flex items-center gap-4">
-                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Skeleton className="h-12 w-12 rounded-full" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-32" />
                     <Skeleton className="h-3 w-48" />
@@ -128,25 +118,34 @@ export function CollaboratorSettings({ ideaId, isOwner, currentUserId }: Collabo
           )}
 
           {isError && (
-            <div className="text-center py-8 text-red-600">
+            <div className="py-12 text-center text-rose-500 bg-rose-950/10 rounded-2xl m-2 border border-rose-500/20">
               Failed to load team members
             </div>
           )}
 
           {!isLoading && !isError && collaborators.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">No team members yet</p>
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="mb-4 rounded-full bg-white/5 p-4 ring-1 ring-white/10">
+                <Users className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <p className="text-base font-medium text-foreground">Solo Journey</p>
+              <p className="max-w-xs text-sm text-muted-foreground mt-1">
+                You're currently flying solo. Build your squad to accelerate progress.
+              </p>
               {isOwner && (
-                <p className="text-sm mt-1">
-                  Invite collaborators to work on this idea together
-                </p>
+                <Button
+                  variant="outline"
+                  className="mt-6 border-dashed border-white/20 hover:border-primary/50"
+                  onClick={() => setInviteDialogOpen(true)}
+                >
+                  Invite Collaborators
+                </Button>
               )}
             </div>
           )}
 
           {!isLoading && !isError && collaborators.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-1">
               {collaborators.map((collaborator) => {
                 const isSelf = collaborator.user_id === currentUserId;
                 const canRemove = isOwner || isSelf;
@@ -154,21 +153,22 @@ export function CollaboratorSettings({ ideaId, isOwner, currentUserId }: Collabo
                 return (
                   <div
                     key={collaborator.id}
-                    className="flex items-center gap-4 p-3 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                    className="group flex items-center gap-4 rounded-2xl border border-transparent p-3 transition-all hover:bg-white/5 hover:border-white/5"
                   >
                     {/* Avatar */}
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-10 w-10 ring-2 ring-transparent transition-all group-hover:ring-primary/20">
                       {collaborator.user?.avatar_url && (
                         <AvatarImage
                           src={collaborator.user.avatar_url}
                           alt={collaborator.user.full_name || collaborator.email}
+                          className="object-cover"
                         />
                       )}
-                      <AvatarFallback>
+                      <AvatarFallback className="bg-white/10 text-xs font-medium text-muted-foreground">
                         {collaborator.status === "pending" ? (
-                          <Mail className="h-5 w-5" />
+                          <Mail className="h-4 w-4" />
                         ) : (
-                          collaborator.email[0].toUpperCase()
+                          getInitials(collaborator.user?.full_name || collaborator.email)
                         )}
                       </AvatarFallback>
                     </Avatar>
@@ -176,68 +176,74 @@ export function CollaboratorSettings({ ideaId, isOwner, currentUserId }: Collabo
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium truncate">
-                          {collaborator.user?.full_name || collaborator.email}
-                          {isSelf && <span className="text-gray-500 ml-1">(You)</span>}
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {collaborator.user?.full_name || "Unknown User"}
                         </p>
+                        {isSelf && <span className="text-[10px] font-bold text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded ml-1">YOU</span>}
                         {getStatusIcon(collaborator.status)}
                       </div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                      <p className="text-xs text-muted-foreground truncate font-mono">
                         {collaborator.email}
                       </p>
+
                       {collaborator.status === "pending" && (
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-yellow-600">
-                            Invitation pending • Expires{" "}
-                            {new Date(collaborator.expires_at).toLocaleDateString()}
-                          </p>
+                        <div className="mt-2 flex items-center gap-3 rounded-lg bg-amber-500/10 px-3 py-2 border border-amber-500/20 w-fit">
+                          <Clock className="h-3 w-3 text-amber-500" />
+                          <span className="text-xs font-medium text-amber-500">
+                            Pending
+                            <span className="opacity-50 mx-1">•</span>
+                            Expires {new Date(collaborator.expires_at).toLocaleDateString()}
+                          </span>
                           {isOwner && collaborator.invite_token && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-2 text-xs"
+                            <button
                               onClick={() => handleCopyInviteLink(collaborator.invite_token!)}
+                              className="ml-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-500 hover:text-amber-400 hover:underline"
                             >
-                              <Copy className="h-3 w-3 mr-1" />
+                              <Copy className="h-3 w-3" />
                               Copy Link
-                            </Button>
+                            </button>
                           )}
                         </div>
                       )}
                     </div>
 
                     {/* Role Badge */}
-                    <Badge variant="secondary" className={getRoleColor(collaborator.role)}>
-                      {collaborator.role}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getRoleBadgeVariant(collaborator.role) as any} className="capitalize">
+                        {collaborator.role === 'admin' && <Crown className="mr-1 h-3 w-3" />}
+                        {collaborator.role === 'editor' && <Shield className="mr-1 h-3 w-3" />}
+                        {collaborator.role}
+                      </Badge>
 
-                    {/* Actions */}
-                    {canRemove && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => handleRemove(collaborator)}
-                            className="text-red-600 focus:text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            {isSelf ? "Leave Team" : "Remove"}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                      {/* Actions */}
+                      {canRemove && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <MoreVertical className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 bg-[#09090b]/90 backdrop-blur-xl border-white/10">
+                            <DropdownMenuItem
+                              onClick={() => handleRemove(collaborator)}
+                              className="text-rose-500 focus:text-rose-500 focus:bg-rose-500/10 cursor-pointer"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              {isSelf ? "Leave Team" : "Remove Member"}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </Card>
+
+      </div>
 
       {isOwner && (
         <InviteDialog
@@ -248,4 +254,13 @@ export function CollaboratorSettings({ ideaId, isOwner, currentUserId }: Collabo
       )}
     </>
   );
+}
+
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 }

@@ -29,7 +29,7 @@ export default function IdeaPage({ params }: IdeaPageProps) {
         return (
             <>
                 <Header />
-                <main className="mx-auto max-w-7xl px-6 py-8">
+                <main className="mx-auto max-w-7xl px-6 pt-32 pb-8">
                     <div className="flex flex-col items-center justify-center rounded-[2rem] border border-dashed border-border bg-card/50 p-12 text-center">
                         <p className="font-display text-xl font-semibold text-foreground">Invalid idea</p>
                         <p className="mt-2 text-sm text-muted-foreground">
@@ -55,7 +55,7 @@ function IdeaPageContent({ id }: { id: string }) {
         return (
             <>
                 <Header />
-                <main className="mx-auto max-w-7xl px-6 py-8">
+                <main className="mx-auto max-w-7xl px-6 pt-32 pb-8">
                     <IdeaDetailSkeleton />
                 </main>
             </>
@@ -66,7 +66,7 @@ function IdeaPageContent({ id }: { id: string }) {
         return (
             <>
                 <Header />
-                <main className="mx-auto max-w-7xl px-6 py-8">
+                <main className="mx-auto max-w-7xl px-6 pt-32 pb-8">
                     <div className="flex flex-col items-center justify-center rounded-[2rem] border border-dashed border-border bg-card/50 p-12 text-center">
                         <p className="font-display text-xl font-semibold text-foreground">Idea not found</p>
                         <p className="mt-2 text-sm text-muted-foreground">
@@ -86,7 +86,7 @@ function IdeaPageContent({ id }: { id: string }) {
     return (
         <>
             <Header />
-            <main className="mx-auto max-w-7xl px-6 py-8 min-h-[calc(100vh-4rem)]">
+            <main className="mx-auto w-full max-w-[1600px] px-4 md:px-8 pt-32 pb-8 min-h-[calc(100vh-4rem)]">
                 <IdeaDetail
                     idea={idea}
                     user={user}
@@ -180,26 +180,25 @@ function IdeaDetail({
     };
 
     return (
-        <article className="mb-8 overflow-hidden rounded-[2.5rem] bg-card shadow-sm border border-border">
+        <article className="group relative mb-8 overflow-hidden rounded-[2.5rem] bg-[#09090b]/80 border border-white/5 shadow-2xl backdrop-blur-md transition-all">
+            {/* Ambient Background Glow */}
+            <div className="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-[#7877c6]/10 blur-[120px] pointer-events-none" />
+
             {/* Header Section */}
             <div className="p-8 md:p-12 pb-0">
-                <div className="mb-6 flex flex-wrap gap-4 items-center justify-between">
+                <div className="mb-8 flex flex-wrap gap-6 items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12 border border-border">
+                        <Avatar className="h-14 w-14 border-2 border-white/10 shadow-md">
                             <AvatarImage src={idea.author?.avatar_url || undefined} />
-                            <AvatarFallback>{getInitials(idea.author?.full_name)}</AvatarFallback>
+                            <AvatarFallback className="bg-white/10 text-foreground">{getInitials(idea.author?.full_name)}</AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col">
-                            <span className="font-semibold text-foreground">{idea.author?.full_name || "Anonymous"}</span>
-                            <span className="text-sm text-muted-foreground">{formatDistanceToNow(idea.created_at)}</span>
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-lg font-bold text-foreground tracking-tight">{idea.author?.full_name || "Anonymous"}</span>
+                            <span className="text-sm font-medium text-muted-foreground">{formatDistanceToNow(idea.created_at)}</span>
                         </div>
                     </div>
 
-
-
-
-
-                    <div className="flex items-center gap-2 self-start md:self-auto">
+                    <div className="flex items-center gap-3">
                         {canEdit && (
                             <PivotDialog
                                 ideaId={idea.id}
@@ -211,7 +210,7 @@ function IdeaDetail({
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="gap-2 text-muted-foreground hover:text-foreground"
+                            className="gap-2 h-10 px-4 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 text-muted-foreground hover:text-foreground transition-all"
                             onClick={() => {
                                 const url = `${window.location.origin}/share/${idea.id}`;
                                 navigator.clipboard.writeText(url);
@@ -226,7 +225,7 @@ function IdeaDetail({
 
                 <div className="grid gap-8 md:grid-cols-[1fr_300px]">
                     <div>
-                        <h1 className="mb-4 font-display text-3xl md:text-4xl font-bold leading-tight text-foreground tracking-tight">{idea.title}</h1>
+                        <h1 className="mb-6 font-display text-4xl md:text-5xl font-bold leading-[1.1] text-foreground tracking-tight drop-shadow-sm">{idea.title}</h1>
                     </div>
                     <div className="md:pt-2">
                         <ValuationCard ideaId={idea.id} />
@@ -234,57 +233,22 @@ function IdeaDetail({
                 </div>
 
                 {/* Tabs Navigation */}
-                <div className="flex items-center gap-6 border-b border-border mt-8">
-                    <button
-                        onClick={() => setActiveTab("description")}
-                        className={cn(
-                            "pb-4 text-sm font-medium transition-colors relative",
-                            activeTab === "description" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        Description
-                        {activeTab === "description" && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("journey")}
-                        className={cn(
-                            "pb-4 text-sm font-medium transition-colors relative",
-                            activeTab === "journey" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        The Journey
-                        {activeTab === "journey" && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("history")}
-                        className={cn(
-                            "pb-4 text-sm font-medium transition-colors relative",
-                            activeTab === "history" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        Version History
-                        {activeTab === "history" && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
-                        )}
-                    </button>
-                    {(isOwner || isCollaborator) && (
+                <div className="flex items-center gap-8 border-b border-white/10 mt-12 px-2">
+                    {["description", "journey", "history", ...(isOwner || isCollaborator ? ["team"] : [])].map((tab) => (
                         <button
-                            onClick={() => setActiveTab("team")}
+                            key={tab}
+                            onClick={() => setActiveTab(tab as any)}
                             className={cn(
-                                "pb-4 text-sm font-medium transition-colors relative",
-                                activeTab === "team" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                                "pb-4 text-sm font-bold tracking-wide uppercase transition-all relative",
+                                activeTab === tab ? "text-foreground" : "text-muted-foreground/60 hover:text-foreground/80"
                             )}
                         >
-                            Team
-                            {activeTab === "team" && (
-                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            {activeTab === tab && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
                             )}
                         </button>
-                    )}
+                    ))}
                 </div>
             </div>
 
@@ -401,7 +365,7 @@ function IdeaDetail({
                     </div>
                 ) : (
                     <div className="space-y-6">
-                        <CollaboratorSettings 
+                        <CollaboratorSettings
                             ideaId={idea.id}
                             isOwner={canManage}
                             currentUserId={user?.id}
@@ -457,7 +421,7 @@ function CommentsSection({
     const comments = data?.pages.flatMap((page) => page.data) ?? [];
 
     return (
-        <section className="max-w-3xl mx-auto">
+        <section className="max-w-5xl mx-auto mt-12">
             <h2 className="mb-6 font-display text-2xl font-bold text-foreground">Comments</h2>
 
             <form onSubmit={handleSubmit} className="mb-8 flex gap-3">

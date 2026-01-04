@@ -22,6 +22,7 @@ export interface Idea {
   comments_count: number;
   created_at: string;
   updated_at: string;
+  current_level: number;
 }
 
 export interface Vote {
@@ -39,6 +40,28 @@ export interface Comment {
   user_id: string;
   content: string;
   created_at: string;
+}
+
+export interface IdeaLevel {
+  id: string;
+  idea_id: string;
+  level_number: number;
+  status: "locked" | "in_progress" | "completed";
+  data: any; // JSONB
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IdeaFeedback {
+  id: string;
+  idea_id: string;
+  level_number: number;
+  user_id: string;
+  content: string;
+  ratings: any; // JSONB
+  tags: string[];
+  created_at: string;
+  updated_at: string;
 }
 
 // Joined types for API responses
@@ -77,6 +100,16 @@ export interface Database {
         Row: Comment;
         Insert: Pick<Comment, "idea_id" | "user_id" | "content">;
         Update: never;
+      };
+      idea_levels: {
+        Row: IdeaLevel;
+        Insert: Pick<IdeaLevel, "idea_id" | "level_number" | "status" | "data">;
+        Update: Partial<Pick<IdeaLevel, "status" | "data">>;
+      };
+      idea_feedback: {
+        Row: IdeaFeedback;
+        Insert: Pick<IdeaFeedback, "idea_id" | "level_number" | "user_id" | "content" | "ratings" | "tags">;
+        Update: Partial<Pick<IdeaFeedback, "content" | "ratings" | "tags">>;
       };
     };
   };

@@ -6,7 +6,7 @@
 
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -88,6 +88,7 @@ function IdeaPageContent({ id }: { id: string }) {
             <main className="mx-auto max-w-7xl px-6 py-8 min-h-[calc(100vh-4rem)]">
                 <IdeaDetail
                     idea={idea}
+                    user={user}
                     isAuthenticated={isAuthenticated}
                     authLoading={authLoading}
                 />
@@ -101,18 +102,53 @@ function IdeaPageContent({ id }: { id: string }) {
     );
 }
 
+import { JourneyStepper } from "@/components/forge/JourneyStepper";
+import { Level1Form } from "@/components/forge/Level1Form";
+import { useIdeaLevels } from "@/hooks/use-forge";
+import { cn } from "@/lib/utils";
+
+import { LevelUpModal } from "@/components/forge/LevelUpModal";
+import { Level2Form } from "@/components/forge/Level2Form";
+import { Level3Form } from "@/components/forge/Level3Form";
+import { Level4Form } from "@/components/forge/Level4Form";
+import { Level5Form } from "@/components/forge/Level5Form";
+
 function IdeaDetail({
     idea,
+    user,
     isAuthenticated,
     authLoading,
 }: {
     idea: any;
+    user: any;
     isAuthenticated: boolean;
     authLoading: boolean;
 }) {
     const router = useRouter();
     const { mutate: vote, isPending: isVoting } = useVote(idea.id);
     const { mutate: removeVote, isPending: isRemoving } = useRemoveVote(idea.id);
+    const { data: levels } = useIdeaLevels(idea.id);
+    const [activeTab, setActiveTab] = useState<"description" | "journey">("description");
+
+    const currentLevel = idea.current_level || 0;
+
+    // Default to current level
+    const [selectedLevel, setSelectedLevel] = useState(currentLevel);
+    const [showLevelUp, setShowLevelUp] = useState(false);
+    const [prevLevel, setPrevLevel] = useState(currentLevel);
+
+    // Update selected level if currentLevel changes (e.g. after completing a level)
+    useEffect(() => {
+        if (currentLevel > prevLevel) {
+            setShowLevelUp(true);
+            setSelectedLevel(currentLevel);
+            setPrevLevel(currentLevel);
+        } else if (currentLevel !== prevLevel) {
+            // Just sync if it went down (unlikely) or init
+            setSelectedLevel(currentLevel);
+            setPrevLevel(currentLevel);
+        }
+    }, [currentLevel, prevLevel]);
 
     const userVote = idea.user_vote?.value;
     const netVotes = (idea.upvotes_count ?? 0) - (idea.downvotes_count ?? 0);
@@ -134,54 +170,161 @@ function IdeaDetail({
     };
 
     return (
-        <article className="mb-8 overflow-hidden rounded-[2.5rem] bg-card p-8 md:p-12 shadow-sm border border-border">
-            <div className="mb-6 flex items-center gap-4">
-                <Avatar className="h-12 w-12 border border-border">
-                    <AvatarImage src={idea.author?.avatar_url || undefined} />
-                    <AvatarFallback>{getInitials(idea.author?.full_name)}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                    <span className="font-semibold text-foreground">{idea.author?.full_name || "Anonymous"}</span>
-                    <span className="text-sm text-muted-foreground">{formatDistanceToNow(idea.created_at)}</span>
+        <article className="mb-8 overflow-hidden rounded-[2.5rem] bg-card shadow-sm border border-border">
+            {/* Header Section */}
+            <div className="p-8 md:p-12 pb-0">
+                <div className="mb-6 flex items-center gap-4">
+                    <Avatar className="h-12 w-12 border border-border">
+                        <AvatarImage src={idea.author?.avatar_url || undefined} />
+                        <AvatarFallback>{getInitials(idea.author?.full_name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                        <span className="font-semibold text-foreground">{idea.author?.full_name || "Anonymous"}</span>
+                        <span className="text-sm text-muted-foreground">{formatDistanceToNow(idea.created_at)}</span>
+                    </div>
+                </div>
+
+                <h1 className="mb-4 font-display text-3xl md:text-4xl font-bold leading-tight text-foreground tracking-tight">{idea.title}</h1>
+
+                {/* Tabs Navigation */}
+                <div className="flex items-center gap-6 border-b border-border mt-8">
+                    <button
+                        onClick={() => setActiveTab("description")}
+                        className={cn(
+                            "pb-4 text-sm font-medium transition-colors relative",
+                            activeTab === "description" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Description
+                        {activeTab === "description" && (
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("journey")}
+                        className={cn(
+                            "pb-4 text-sm font-medium transition-colors relative",
+                            activeTab === "journey" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        The Journey
+                        {activeTab === "journey" && (
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+                        )}
+                    </button>
                 </div>
             </div>
 
-            <h1 className="mb-4 font-display text-3xl md:text-4xl font-bold leading-tight text-foreground tracking-tight">{idea.title}</h1>
-            <p className="mb-8 text-lg text-muted-foreground leading-relaxed whitespace-pre-wrap">{idea.description}</p>
+            {/* Tab Content */}
+            <div className="p-8 md:p-12 pt-8">
+                {activeTab === "description" ? (
+                    <>
+                        <p className="mb-8 text-lg text-muted-foreground leading-relaxed whitespace-pre-wrap">{idea.description}</p>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
-                <div className="flex items-center gap-2 rounded-full border border-border bg-background/50 p-1.5 shadow-sm">
-                    <button
-                        onClick={() => handleVote(1)}
-                        disabled={isVoting || isRemoving || authLoading}
-                        className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors hover:bg-muted ${userVote === 1 ? "bg-green-500/10 text-green-600 hover:bg-green-500/20" : "text-muted-foreground"}`}
-                    >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={userVote === 1 ? "fill-current" : ""}>
-                            <path d="M18 15l-6-6-6 6" />
-                        </svg>
-                        <span>{idea.upvotes_count ?? 0}</span>
-                    </button>
+                        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
+                            <div className="flex items-center gap-2 rounded-full border border-border bg-background/50 p-1.5 shadow-sm">
+                                <button
+                                    onClick={() => handleVote(1)}
+                                    disabled={isVoting || isRemoving || authLoading}
+                                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors hover:bg-muted ${userVote === 1 ? "bg-green-500/10 text-green-600 hover:bg-green-500/20" : "text-muted-foreground"}`}
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={userVote === 1 ? "fill-current" : ""}>
+                                        <path d="M18 15l-6-6-6 6" />
+                                    </svg>
+                                    <span>{idea.upvotes_count ?? 0}</span>
+                                </button>
 
-                    <span className="min-w-[2rem] text-center font-bold text-foreground">{netVotes > 0 ? `+${netVotes}` : netVotes}</span>
+                                <span className="min-w-[2rem] text-center font-bold text-foreground">{netVotes > 0 ? `+${netVotes}` : netVotes}</span>
 
-                    <button
-                        onClick={() => handleVote(-1)}
-                        disabled={isVoting || isRemoving || authLoading}
-                        className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors hover:bg-muted ${userVote === -1 ? "bg-red-500/10 text-red-600 hover:bg-red-500/20" : "text-muted-foreground"}`}
-                    >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={userVote === -1 ? "fill-current" : ""}>
-                            <path d="M6 9l6 6 6-6" />
-                        </svg>
-                        <span>{idea.downvotes_count ?? 0}</span>
-                    </button>
-                </div>
+                                <button
+                                    onClick={() => handleVote(-1)}
+                                    disabled={isVoting || isRemoving || authLoading}
+                                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors hover:bg-muted ${userVote === -1 ? "bg-red-500/10 text-red-600 hover:bg-red-500/20" : "text-muted-foreground"}`}
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={userVote === -1 ? "fill-current" : ""}>
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg>
+                                    <span>{idea.downvotes_count ?? 0}</span>
+                                </button>
+                            </div>
 
-                <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
-                    {idea.comments_count ?? 0} comments
-                </span>
+                            <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                </svg>
+                                {idea.comments_count ?? 0} comments
+                            </span>
+                        </div>
+                    </>
+                ) : (
+                    <div className="space-y-8">
+                        <JourneyStepper
+                            currentLevel={currentLevel}
+                            selectedLevel={selectedLevel}
+                            onSelectLevel={setSelectedLevel}
+                        />
+
+                        <div className="mt-8 rounded-2xl bg-muted/30 p-6 border border-border/50">
+                            {selectedLevel === 0 && (
+                                <div className="p-8 text-center text-muted-foreground">
+                                    <h3 className="text-xl font-semibold text-foreground mb-2">The Spark</h3>
+                                    <p>The initial concept. See the Description tab for details.</p>
+                                </div>
+                            )}
+
+                            {selectedLevel === 1 && (
+                                <Level1Form
+                                    ideaId={idea.id}
+                                    levelData={levels?.data?.find(l => l.level_number === 1)}
+                                    isLocked={currentLevel < 0} // Always unlocked basically
+                                    isOwner={user?.id === idea.user_id}
+                                />
+                            )}
+
+                            {selectedLevel === 2 && (
+                                <Level2Form
+                                    ideaId={idea.id}
+                                    levelData={levels?.data?.find(l => l.level_number === 2)}
+                                    isLocked={currentLevel < 1}
+                                    isOwner={user?.id === idea.user_id}
+                                />
+                            )}
+
+                            {selectedLevel === 3 && (
+                                <Level3Form
+                                    ideaId={idea.id}
+                                    levelData={levels?.data?.find(l => l.level_number === 3)}
+                                    isLocked={currentLevel < 2}
+                                    isOwner={user?.id === idea.user_id}
+                                />
+                            )}
+
+                            {selectedLevel === 4 && (
+                                <Level4Form
+                                    ideaId={idea.id}
+                                    levelData={levels?.data?.find(l => l.level_number === 4)}
+                                    isLocked={currentLevel < 3}
+                                    isOwner={user?.id === idea.user_id}
+                                />
+                            )}
+
+                            {selectedLevel === 5 && (
+                                <Level5Form
+                                    ideaId={idea.id}
+                                    levelData={levels?.data?.find(l => l.level_number === 5)}
+                                    isLocked={currentLevel < 4}
+                                    isOwner={user?.id === idea.user_id}
+                                />
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                <LevelUpModal
+                    isOpen={showLevelUp}
+                    onClose={() => setShowLevelUp(false)}
+                    level={currentLevel}
+                />
             </div>
         </article>
     );

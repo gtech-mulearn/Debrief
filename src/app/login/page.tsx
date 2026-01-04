@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 export default function LoginPage() {
     const { isAuthenticated, loading, signInWithGoogle } = useAuth();
@@ -115,7 +116,8 @@ export default function LoginPage() {
                     {/* Header */}
                     <div className="space-y-4 text-center md:text-left">
                         <div className="inline-flex items-center justify-center md:justify-start gap-2 mb-4">
-                            <span className="font-heading font-bold text-xl tracking-tight">Debrief</span>
+                            <Image src="/debrief-logo.svg" alt="Debrief Logo" width={32} height={32} className="h-8 w-8" />
+                            <span className="font-heading font-bold text-xl tracking-tight">debrief</span>
                         </div>
                         <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight text-white leading-[1.1]">
                             Validate ideas <br />

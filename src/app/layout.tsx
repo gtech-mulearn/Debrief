@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Poppins } from "next/font/google";
 import { QueryProvider } from "@/providers";
 import { Toaster } from "@/components/ui/sonner";
+import { Footer } from "@/components/layout";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -41,6 +42,7 @@ export default function RootLayout({
         <QueryProvider>
           {children}
           <Toaster />
+          <Footer />
         </QueryProvider>
       </body>
     </html>

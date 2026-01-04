@@ -7,6 +7,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { AuthButton } from "./auth-button";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,13 @@ export function Header() {
 
                 {/* Logo Section */}
                 <Link href="/" className="flex items-center gap-2 no-underline transition-transform duration-300 hover:scale-105 active:scale-95">
+                    <Image
+                        src="/favicon.svg"
+                        alt="Debrief Logo"
+                        width={32}
+                        height={32}
+                        className="h-8 w-8 rounded-full"
+                    />
                     <span className="font-display text-xl font-bold tracking-tight text-white/90 drop-shadow-sm">debrief</span>
                 </Link>
 

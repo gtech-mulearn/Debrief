@@ -8,8 +8,26 @@ export interface Profile {
   email: string | null;
   full_name: string | null;
   avatar_url: string | null;
+  karma: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface Badge {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  icon_name: string;
+  created_at: string;
+}
+
+export interface UserBadge {
+  id: string;
+  user_id: string;
+  badge_id: string;
+  awarded_at: string;
+  badge?: Badge; // For joined queries
 }
 
 export interface Idea {
@@ -22,6 +40,7 @@ export interface Idea {
   comments_count: number;
   created_at: string;
   updated_at: string;
+  current_level: number;
 }
 
 export interface Vote {
@@ -39,6 +58,29 @@ export interface Comment {
   user_id: string;
   content: string;
   created_at: string;
+}
+
+export interface IdeaLevel {
+  id: string;
+  idea_id: string;
+  level_number: number;
+  status: "locked" | "in_progress" | "completed";
+  data: any; // JSONB
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IdeaFeedback {
+  id: string;
+  idea_id: string;
+  level_number: number;
+  user_id: string;
+  content: string;
+  ratings: any; // JSONB
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+  author?: Pick<Profile, "id" | "full_name" | "avatar_url">;
 }
 
 // Joined types for API responses
@@ -76,6 +118,26 @@ export interface Database {
       comments: {
         Row: Comment;
         Insert: Pick<Comment, "idea_id" | "user_id" | "content">;
+        Update: never;
+      };
+      idea_levels: {
+        Row: IdeaLevel;
+        Insert: Pick<IdeaLevel, "idea_id" | "level_number" | "status" | "data">;
+        Update: Partial<Pick<IdeaLevel, "status" | "data">>;
+      };
+      idea_feedback: {
+        Row: IdeaFeedback;
+        Insert: Pick<IdeaFeedback, "idea_id" | "level_number" | "user_id" | "content" | "ratings" | "tags">;
+        Update: Partial<Pick<IdeaFeedback, "content" | "ratings" | "tags">>;
+      };
+      badges: {
+        Row: Badge;
+        Insert: Pick<Badge, "slug" | "name" | "description" | "icon_name">;
+        Update: Partial<Pick<Badge, "name" | "description" | "icon_name">>;
+      };
+      user_badges: {
+        Row: UserBadge;
+        Insert: Pick<UserBadge, "user_id" | "badge_id">;
         Update: never;
       };
     };

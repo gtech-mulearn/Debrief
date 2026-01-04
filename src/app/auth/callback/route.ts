@@ -2,6 +2,8 @@
  * Auth Callback Route
  * 
  * Handles OAuth callback from Supabase Auth
+ * Note: The actual redirect destination is stored in localStorage by the client
+ * and handled client-side after this server redirect
  */
 
 import { createServerClient } from "@/lib/supabase/server";
@@ -10,14 +12,14 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
 
   if (code) {
     const supabase = await createServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      // Redirect to a client page that will handle the localStorage redirect
+      return NextResponse.redirect(`${origin}/auth/redirect`);
     }
   }
 

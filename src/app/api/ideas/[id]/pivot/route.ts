@@ -43,10 +43,12 @@ export const POST = withErrorHandling(async (request: NextRequest, context: Rout
     if (error instanceof ZodError) {
       const errors: Record<string, string[]> = {};
       error.issues.forEach((err) => {
-        const path = err.path.join(".");
+        const path = err.path.join(".") || "_root";
         if (!errors[path]) errors[path] = [];
         errors[path].push(err.message);
       });
+      console.error("[Pivot API] Validation errors:", JSON.stringify(errors, null, 2));
+      console.error("[Pivot API] Request body:", JSON.stringify(body, null, 2));
       throw new ValidationError(errors);
     }
     throw error;
@@ -66,9 +68,24 @@ export const POST = withErrorHandling(async (request: NextRequest, context: Rout
     throw new NotFoundError("Idea not found");
   }
 
-  // 2. Verify ownership
-  if (idea.user_id !== user.id) {
-    throw new ForbiddenError("You can only pivot your own ideas");
+  // 2. Verify ownership or editor/admin collaborator status
+  const isOwner = idea.user_id === user.id;
+  
+  if (!isOwner) {
+    // Check if user is an editor or admin collaborator
+    const { data: collaboration } = await supabase
+      .from("idea_collaborators")
+      .select("role")
+      .eq("idea_id", id)
+      .eq("user_id", user.id)
+      .eq("status", "accepted")
+      .single();
+    
+    const canEdit = collaboration?.role === "editor" || collaboration?.role === "admin";
+    
+    if (!canEdit) {
+      throw new ForbiddenError("You don't have permission to pivot this idea");
+    }
   }
 
   // 3. Create version snapshot of CURRENT state

@@ -69,11 +69,16 @@ export function useAuth() {
     };
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (redirectAfterLogin?: string) => {
     const supabase = createClient();
     const redirectTo = typeof window !== "undefined" 
       ? `${window.location.origin}/auth/callback`
       : `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/callback`;
+
+    // Store the redirect destination for after OAuth completes
+    if (redirectAfterLogin && typeof window !== "undefined") {
+      localStorage.setItem("auth_redirect", redirectAfterLogin);
+    }
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",

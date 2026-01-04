@@ -54,6 +54,12 @@ export class ValidationError extends ApiError {
   }
 }
 
+export class ConflictError extends ApiError {
+  constructor(message = "Conflict") {
+    super(409, message, "CONFLICT");
+  }
+}
+
 /**
  * Creates a standardized error response
  */

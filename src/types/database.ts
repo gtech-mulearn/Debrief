@@ -110,6 +110,26 @@ export interface IdeaVersionWithMetadata extends IdeaVersion {
   is_current?: boolean;
 }
 
+export interface IdeaCollaborator {
+  id: string;
+  idea_id: string;
+  user_id: string | null;
+  email: string;
+  role: "viewer" | "editor" | "admin";
+  status: "pending" | "accepted" | "declined";
+  invited_by: string;
+  invited_at: string;
+  accepted_at: string | null;
+  declined_at: string | null;
+  invite_token: string | null;
+  expires_at: string;
+}
+
+export interface IdeaCollaboratorWithDetails extends IdeaCollaborator {
+  user?: Pick<Profile, "id" | "full_name" | "avatar_url">;
+  inviter?: Pick<Profile, "id" | "full_name" | "avatar_url">;
+}
+
 // Joined types for API responses
 export interface IdeaWithAuthor extends Idea {
   author: Pick<Profile, "id" | "full_name" | "avatar_url">;
@@ -176,6 +196,14 @@ export interface Database {
         Row: IdeaVersion;
         Insert: Pick<IdeaVersion, "idea_id" | "title" | "description" | "current_level_at_pivot" | "pivot_reason">;
         Update: never; // Versions are immutable
+      };
+      idea_collaborators: {
+        Row: IdeaCollaborator;
+        Insert: Pick<IdeaCollaborator, "idea_id" | "email" | "role" | "invited_by"> & {
+          invite_token?: string;
+          expires_at?: string;
+        };
+        Update: Partial<Pick<IdeaCollaborator, "role" | "status" | "user_id" | "accepted_at" | "declined_at">>;
       };
     };
   };

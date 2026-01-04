@@ -10,3 +10,4 @@ export * from "./votes";
 export * from "./comments";
 export * from "./base";
 export * from "./pivots";
+export * from "./collaborators";

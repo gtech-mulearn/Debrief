@@ -18,6 +18,7 @@ import { useCreatePivot, useVersionHistory } from "@/hooks/use-pivots";
 import { Loader2, GitBranch, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 interface PivotDialogProps {
   ideaId: string;
@@ -36,24 +37,53 @@ export function PivotDialog({
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [pivotReason, setPivotReason] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: historyData } = useVersionHistory(ideaId);
   const { mutate: createPivot, isPending } = useCreatePivot(ideaId);
 
   const nextVersionNumber = (historyData?.data?.length || 0) + 1;
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // At least one of title or description must be provided
+    if (!newTitle.trim() && !newDescription.trim()) {
+      newErrors.general = "Please provide at least a new title or description";
+    }
+
+    // Pivot reason is required and must be at least 10 characters
+    if (!pivotReason.trim()) {
+      newErrors.pivotReason = "Pivot reason is required";
+    } else if (pivotReason.trim().length < 10) {
+      newErrors.pivotReason = "Pivot reason must be at least 10 characters";
+    }
+
+    // Optional field validations
+    if (newTitle.trim() && newTitle.trim().length < 3) {
+      newErrors.newTitle = "Title must be at least 3 characters";
+    }
+    if (newDescription.trim() && newDescription.trim().length < 10) {
+      newErrors.newDescription = "Description must be at least 10 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
 
-    if (!newTitle && !newDescription) {
-      return; // Validation will be handled by the backend
+    if (!validateForm()) {
+      return;
     }
 
     createPivot(
       {
-        new_title: newTitle || undefined,
-        new_description: newDescription || undefined,
-        pivot_reason: pivotReason,
+        new_title: newTitle.trim() || undefined,
+        new_description: newDescription.trim() || undefined,
+        pivot_reason: pivotReason.trim(),
       },
       {
         onSuccess: () => {
@@ -61,13 +91,34 @@ export function PivotDialog({
           setNewTitle("");
           setNewDescription("");
           setPivotReason("");
+          setErrors({});
+        },
+        onError: (error: Error) => {
+          // Try to parse validation errors from the server
+          try {
+            const parsed = JSON.parse(error.message);
+            if (parsed.errors) {
+              const serverErrors: Record<string, string> = {};
+              Object.entries(parsed.errors).forEach(([key, msgs]) => {
+                serverErrors[key] = (msgs as string[]).join(", ");
+              });
+              setErrors(serverErrors);
+            }
+          } catch {
+            toast.error(error.message || "Failed to create pivot");
+          }
         },
       }
     );
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) {
+        setErrors({});
+      }
+    }}>
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="outline" size="sm">
@@ -101,6 +152,14 @@ export function PivotDialog({
               </AlertDescription>
             </Alert>
 
+            {/* General Error */}
+            {errors.general && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{errors.general}</AlertDescription>
+              </Alert>
+            )}
+
             {/* Current State Preview */}
             <div className="rounded-lg border border-border bg-muted/50 p-4">
               <p className="text-sm font-medium text-muted-foreground mb-2">
@@ -123,7 +182,11 @@ export function PivotDialog({
                 onChange={(e) => setNewTitle(e.target.value)}
                 placeholder="Leave blank to keep current title"
                 maxLength={200}
+                className={errors.newTitle ? "border-red-500" : ""}
               />
+              {errors.newTitle && (
+                <p className="text-sm text-red-500">{errors.newTitle}</p>
+              )}
             </div>
 
             {/* New Description */}
@@ -138,8 +201,11 @@ export function PivotDialog({
                 placeholder="Leave blank to keep current description"
                 rows={4}
                 maxLength={5000}
-                className="resize-none"
+                className={`resize-none ${errors.newDescription ? "border-red-500" : ""}`}
               />
+              {errors.newDescription && (
+                <p className="text-sm text-red-500">{errors.newDescription}</p>
+              )}
             </div>
 
             {/* Pivot Reason (Required) */}
@@ -154,12 +220,15 @@ export function PivotDialog({
                 placeholder="E.g., Customer interviews revealed nobody cares about X..."
                 rows={3}
                 maxLength={1000}
-                required
-                className="resize-none"
+                className={`resize-none ${errors.pivotReason ? "border-red-500" : ""}`}
               />
-              <p className="text-xs text-muted-foreground">
-                {pivotReason.length}/1000 characters
-              </p>
+              {errors.pivotReason ? (
+                <p className="text-sm text-red-500">{errors.pivotReason}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {pivotReason.length}/1000 characters (min 10)
+                </p>
+              )}
             </div>
           </div>
 

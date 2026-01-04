@@ -97,6 +97,41 @@ export interface GetVersionHistoryResponse {
 export interface GetCommentsResponse extends PaginatedResponse<CommentWithAuthor> {}
 
 // ===================================
+// TEAM COLLABORATION
+// ===================================
+import type { IdeaCollaborator, IdeaCollaboratorWithDetails } from "./database";
+
+export interface InviteCollaboratorRequest {
+  email: string;
+  role: "viewer" | "editor" | "admin";
+}
+
+export interface InviteCollaboratorResponse {
+  data: IdeaCollaborator;
+}
+
+export interface GetCollaboratorsResponse {
+  data: IdeaCollaboratorWithDetails[];
+}
+
+export interface AcceptInviteRequest {
+  token: string;
+}
+
+export interface AcceptInviteResponse {
+  data: {
+    collaborator: IdeaCollaboratorWithDetails;
+    idea: IdeaWithAuthor;
+  };
+}
+
+export interface RemoveCollaboratorResponse {
+  data: {
+    success: boolean;
+  };
+}
+
+// ===================================
 // AUTH
 // ===================================
 export interface AuthUser {

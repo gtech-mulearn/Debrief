@@ -116,6 +116,8 @@ import { Level5Form } from "@/components/forge/Level5Form";
 import { BackingDialog } from "@/components/social/BackingDialog";
 import { ValuationCard } from "@/components/social/ValuationCard";
 import { PivotDialog, PivotTimeline } from "@/components/pivot";
+import { CollaboratorSettings } from "@/components/collaboration";
+import { useCollaboratorRole } from "@/hooks/use-collaborators";
 
 function IdeaDetail({
     idea,
@@ -132,7 +134,11 @@ function IdeaDetail({
     const { mutate: vote, isPending: isVoting } = useVote(idea.id);
     const { mutate: removeVote, isPending: isRemoving } = useRemoveVote(idea.id);
     const { data: levels } = useIdeaLevels(idea.id);
-    const [activeTab, setActiveTab] = useState<"description" | "journey" | "history">("description");
+    const [activeTab, setActiveTab] = useState<"description" | "journey" | "history" | "team">("description");
+
+    // Ownership and collaboration permissions
+    const isOwner = isAuthenticated && user?.id === idea.user_id;
+    const { canEdit, canManage, isCollaborator } = useCollaboratorRole(idea.id, user?.id, isOwner);
 
     const currentLevel = idea.current_level || 0;
 
@@ -156,14 +162,6 @@ function IdeaDetail({
 
     const userVote = idea.user_vote?.value;
     const netVotes = (idea.upvotes_count ?? 0) - (idea.downvotes_count ?? 0);
-
-    // Debug logging for pivot button visibility
-    console.log('Pivot button debug:', {
-        isAuthenticated,
-        userId: user?.id,
-        ideaUserId: idea.user_id,
-        shouldShow: isAuthenticated && user?.id === idea.user_id
-    });
 
     const handleVote = (value: 1 | -1) => {
         if (authLoading) return;
@@ -202,7 +200,7 @@ function IdeaDetail({
 
 
                     <div className="flex items-center gap-2 self-start md:self-auto">
-                        {isAuthenticated && user?.id === idea.user_id && (
+                        {canEdit && (
                             <PivotDialog
                                 ideaId={idea.id}
                                 currentTitle={idea.title}
@@ -273,6 +271,20 @@ function IdeaDetail({
                             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
                         )}
                     </button>
+                    {(isOwner || isCollaborator) && (
+                        <button
+                            onClick={() => setActiveTab("team")}
+                            className={cn(
+                                "pb-4 text-sm font-medium transition-colors relative",
+                                activeTab === "team" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            Team
+                            {activeTab === "team" && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+                            )}
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -338,7 +350,7 @@ function IdeaDetail({
                                     ideaId={idea.id}
                                     levelData={levels?.data?.find(l => l.level_number === 1)}
                                     isLocked={currentLevel < 0} // Always unlocked basically
-                                    isOwner={user?.id === idea.user_id}
+                                    isOwner={canEdit}
                                     isAuthenticated={isAuthenticated}
                                 />
                             )}
@@ -348,7 +360,7 @@ function IdeaDetail({
                                     ideaId={idea.id}
                                     levelData={levels?.data?.find(l => l.level_number === 2)}
                                     isLocked={currentLevel < 1}
-                                    isOwner={user?.id === idea.user_id}
+                                    isOwner={canEdit}
                                     isAuthenticated={isAuthenticated}
                                 />
                             )}
@@ -358,7 +370,7 @@ function IdeaDetail({
                                     ideaId={idea.id}
                                     levelData={levels?.data?.find(l => l.level_number === 3)}
                                     isLocked={currentLevel < 2}
-                                    isOwner={user?.id === idea.user_id}
+                                    isOwner={canEdit}
                                     isAuthenticated={isAuthenticated}
                                 />
                             )}
@@ -368,7 +380,7 @@ function IdeaDetail({
                                     ideaId={idea.id}
                                     levelData={levels?.data?.find(l => l.level_number === 4)}
                                     isLocked={currentLevel < 3}
-                                    isOwner={user?.id === idea.user_id}
+                                    isOwner={canEdit}
                                     isAuthenticated={isAuthenticated}
                                 />
                             )}
@@ -378,14 +390,22 @@ function IdeaDetail({
                                     ideaId={idea.id}
                                     levelData={levels?.data?.find(l => l.level_number === 5)}
                                     isLocked={currentLevel < 4}
-                                    isOwner={user?.id === idea.user_id}
+                                    isOwner={canEdit}
                                 />
                             )}
                         </div>
                     </div>
-                ) : (
+                ) : activeTab === "history" ? (
                     <div className="space-y-6">
                         <PivotTimeline ideaId={idea.id} />
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        <CollaboratorSettings 
+                            ideaId={idea.id}
+                            isOwner={canManage}
+                            currentUserId={user?.id}
+                        />
                     </div>
                 )}
 

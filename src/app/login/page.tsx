@@ -26,7 +26,7 @@ export default function LoginPage() {
 
     const handleSignIn = async () => {
         try {
-            await signInWithGoogle();
+            await signInWithGoogle(redirectTo);
         } catch (error) {
             console.error("Sign in error:", error);
         }

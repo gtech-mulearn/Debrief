@@ -118,12 +118,12 @@ export function Level4Form({ ideaId, levelData, isLocked = false, isOwner = fals
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="space-y-3">
                     <label htmlFor="revenue_model" className="text-base font-semibold text-foreground">
-                        Revenue Model <span className="text-muted-foreground font-normal text-sm ml-2">(How do you make money?)</span>
+                        Revenue Model <span className="text-muted-foreground font-normal text-sm ml-2">(Who pays? How much?)</span>
                     </label>
                     <Textarea
                         id="revenue_model"
                         name="revenue_model"
-                        placeholder="e.g. Subscription, Transaction fees, Ads..."
+                        placeholder="e.g. Subscription ($10/mo), Transaction fees (2%), One-time purchase..."
                         value={formData.revenue_model}
                         onChange={handleChange}
                         disabled={isPending}
@@ -132,12 +132,12 @@ export function Level4Form({ ideaId, levelData, isLocked = false, isOwner = fals
                 </div>
                 <div className="space-y-3">
                     <label htmlFor="cost_structure" className="text-base font-semibold text-foreground">
-                        Cost Structure <span className="text-muted-foreground font-normal text-sm ml-2">(Major expenses)</span>
+                        Cost Structure <span className="text-muted-foreground font-normal text-sm ml-2">(What does it cost to serve one customer?)</span>
                     </label>
                     <Textarea
                         id="cost_structure"
                         name="cost_structure"
-                        placeholder="e.g. Server costs, API fees, Marketing..."
+                        placeholder="e.g. Server costs, API fees, Stripe fees, Human support time..."
                         value={formData.cost_structure}
                         onChange={handleChange}
                         disabled={isPending}
@@ -146,12 +146,12 @@ export function Level4Form({ ideaId, levelData, isLocked = false, isOwner = fals
                 </div>
                 <div className="space-y-3">
                     <label htmlFor="sustainability_plan" className="text-base font-semibold text-foreground">
-                        Sustainability Plan <span className="text-muted-foreground font-normal text-sm ml-2">(Long-term viability)</span>
+                        Sustainability Plan <span className="text-muted-foreground font-normal text-sm ml-2">(How do you survive the 'Valley of Death'?)</span>
                     </label>
                     <Textarea
                         id="sustainability_plan"
                         name="sustainability_plan"
-                        placeholder="e.g. We will reach break-even by month 6..."
+                        placeholder="e.g. We reach break-even with 50 customers. We have 6 months of runway..."
                         value={formData.sustainability_plan}
                         onChange={handleChange}
                         disabled={isPending}

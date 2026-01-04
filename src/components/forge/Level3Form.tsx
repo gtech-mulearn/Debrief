@@ -119,12 +119,12 @@ export function Level3Form({ ideaId, levelData, isLocked = false, isOwner = fals
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="space-y-3">
                     <label htmlFor="hypothesis" className="text-base font-semibold text-foreground">
-                        Hypothesis Statement
+                        Hypothesis Statement <span className="text-muted-foreground font-normal text-sm ml-2">(The Bet)</span>
                     </label>
                     <Textarea
                         id="hypothesis"
                         name="hypothesis"
-                        placeholder="If we [do X] for [Persona Y], they will [Action Z]..."
+                        placeholder="If we [do X] for [Person Y], then [Z% of them] will [take Action W]..."
                         value={formData.hypothesis}
                         onChange={handleChange}
                         disabled={isPending}
@@ -133,12 +133,12 @@ export function Level3Form({ ideaId, levelData, isLocked = false, isOwner = fals
                 </div>
                 <div className="space-y-3">
                     <label htmlFor="test_method" className="text-base font-semibold text-foreground">
-                        Test Method <span className="text-muted-foreground font-normal text-sm ml-2">(How will you verify this?)</span>
+                        Test Method <span className="text-muted-foreground font-normal text-sm ml-2">(The 48-Hour Test: How will you verify this without writing code?)</span>
                     </label>
                     <Textarea
                         id="test_method"
                         name="test_method"
-                        placeholder="e.g. Landing Page, Cold DM campaign, Fake Door test..."
+                        placeholder="e.g. Landing Page, Cold DM campaign, Fake Door test, Manual Concierge..."
                         value={formData.test_method}
                         onChange={handleChange}
                         disabled={isPending}
@@ -147,12 +147,12 @@ export function Level3Form({ ideaId, levelData, isLocked = false, isOwner = fals
                 </div>
                 <div className="space-y-3">
                     <label htmlFor="success_criteria" className="text-base font-semibold text-foreground">
-                        Success Criteria <span className="text-muted-foreground font-normal text-sm ml-2">(What defines success?)</span>
+                        Success Criteria <span className="text-muted-foreground font-normal text-sm ml-2">(The Pass Mark: What specific number proves you are right?)</span>
                     </label>
                     <Input
                         id="success_criteria"
                         name="success_criteria"
-                        placeholder="e.g. 10 signups, 5 calls booked, 15% conversion rate"
+                        placeholder="e.g. 15 signups, 5 pre-orders, 20% conversion rate"
                         value={formData.success_criteria}
                         onChange={handleChange}
                         className="h-12 text-base px-4 bg-background/50 border-input/60 focus:bg-background transition-colors"

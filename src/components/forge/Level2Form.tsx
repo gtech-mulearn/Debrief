@@ -118,12 +118,12 @@ export function Level2Form({ ideaId, levelData, isLocked = false, isOwner = fals
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="space-y-3">
                     <label htmlFor="alternatives" className="text-base font-semibold text-foreground">
-                        Existing Alternatives <span className="text-muted-foreground font-normal text-sm ml-2">(Competitors)</span>
+                        Existing Alternatives <span className="text-muted-foreground font-normal text-sm ml-2">(Who is fighting for their attention?)</span>
                     </label>
                     <Textarea
                         id="alternatives"
                         name="alternatives"
-                        placeholder="List direct and indirect competitors..."
+                        placeholder="e.g. Direct competitors, Excel, or just 'doing nothing'..."
                         value={formData.alternatives}
                         onChange={handleChange}
                         disabled={isPending}
@@ -132,12 +132,12 @@ export function Level2Form({ ideaId, levelData, isLocked = false, isOwner = fals
                 </div>
                 <div className="space-y-3">
                     <label htmlFor="why_they_fail" className="text-base font-semibold text-foreground">
-                        Why They Fail <span className="text-muted-foreground font-normal text-sm ml-2">(Gap in Market)</span>
+                        Why They Fail <span className="text-muted-foreground font-normal text-sm ml-2">(What 'Job to be Done' do they miss?)</span>
                     </label>
                     <Textarea
                         id="why_they_fail"
                         name="why_they_fail"
-                        placeholder="They are too expensive, complex, or miss X..."
+                        placeholder="e.g. They are too expensive for students, or require technical skills..."
                         value={formData.why_they_fail}
                         onChange={handleChange}
                         disabled={isPending}
@@ -146,12 +146,12 @@ export function Level2Form({ ideaId, levelData, isLocked = false, isOwner = fals
                 </div>
                 <div className="space-y-3">
                     <label htmlFor="evidence_log" className="text-base font-semibold text-foreground">
-                        Evidence Log <span className="text-muted-foreground font-normal text-sm ml-2">(Links, notes from research)</span>
+                        Evidence Log <span className="text-muted-foreground font-normal text-sm ml-2">(Prove the pain exists)</span>
                     </label>
                     <Textarea
                         id="evidence_log"
                         name="evidence_log"
-                        placeholder="Found 3 Reddit threads complaining about X..."
+                        placeholder="Paste links to Reddit vents, 1-star reviews, or forum complaints..."
                         value={formData.evidence_log}
                         onChange={handleChange}
                         disabled={isPending}

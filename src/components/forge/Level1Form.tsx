@@ -136,12 +136,12 @@ export function Level1Form({ ideaId, levelData, isLocked = false, isOwner = fals
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="space-y-3">
                     <label htmlFor="target_persona" className="text-base font-semibold text-foreground">
-                        Target Persona <span className="text-muted-foreground font-normal text-sm ml-2">(Who has the problem?)</span>
+                        Target Persona <span className="text-muted-foreground font-normal text-sm ml-2">(Who is suffering the most?)</span>
                     </label>
                     <Input
                         id="target_persona"
                         name="target_persona"
-                        placeholder="e.g. College students applying for internships"
+                        placeholder="e.g. Overwhelmed medical students applying for residency (be specific!)"
                         value={formData.target_persona}
                         onChange={handleChange}
                         disabled={isPending}
@@ -151,12 +151,12 @@ export function Level1Form({ ideaId, levelData, isLocked = false, isOwner = fals
 
                 <div className="space-y-3">
                     <label htmlFor="current_workarounds" className="text-base font-semibold text-foreground">
-                        Current Workarounds <span className="text-muted-foreground font-normal text-sm ml-2">(How do they solve it now?)</span>
+                        Current Workarounds <span className="text-muted-foreground font-normal text-sm ml-2">(What are they patching together?)</span>
                     </label>
                     <Textarea
                         id="current_workarounds"
                         name="current_workarounds"
-                        placeholder="e.g. They use Excel sheets or WhatsApp groups"
+                        placeholder="e.g. They manually copy-paste data into 3 different Excel sheets..."
                         value={formData.current_workarounds}
                         onChange={handleChange}
                         disabled={isPending}
@@ -166,12 +166,12 @@ export function Level1Form({ ideaId, levelData, isLocked = false, isOwner = fals
 
                 <div className="space-y-3">
                     <label htmlFor="pain_points" className="text-base font-semibold text-foreground">
-                        Pain Points <span className="text-muted-foreground font-normal text-sm ml-2">(Why do the workarounds fail?)</span>
+                        Pain Points <span className="text-muted-foreground font-normal text-sm ml-2">(Where does the workaround break?)</span>
                     </label>
                     <Textarea
                         id="pain_points"
                         name="pain_points"
-                        placeholder="e.g. Excel is static, WhatsApp is messy and unsearchable"
+                        placeholder="e.g. It takes 4 hours/week and errors cause lost revenue..."
                         value={formData.pain_points}
                         onChange={handleChange}
                         disabled={isPending}

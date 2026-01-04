@@ -107,7 +107,7 @@ export function Level5Form({ ideaId, levelData, isLocked = false, isOwner = fals
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="space-y-3">
                     <label htmlFor="decision" className="text-base font-semibold text-foreground">
-                        Decision
+                        Decision <span className="text-muted-foreground font-normal text-sm ml-2">(Based on evidence, not feelings)</span>
                     </label>
                     <div className="relative">
                         <select
@@ -118,7 +118,7 @@ export function Level5Form({ ideaId, levelData, isLocked = false, isOwner = fals
                             disabled={isPending}
                             className="flex h-12 w-full items-center justify-between rounded-md border border-input/60 bg-background/50 px-4 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none transition-colors"
                         >
-                            <option value="">Select a decision...</option>
+                            <option value="">Select a verdict...</option>
                             <option value="GO">🚀 GO (Build it)</option>
                             <option value="NO-GO">🛑 NO-GO (Drop it)</option>
                             <option value="PIVOT">🔄 PIVOT (Change direction)</option>
@@ -133,12 +133,12 @@ export function Level5Form({ ideaId, levelData, isLocked = false, isOwner = fals
 
                 <div className="space-y-3">
                     <label htmlFor="key_learnings" className="text-base font-semibold text-foreground">
-                        Key Learnings <span className="text-muted-foreground font-normal text-sm ml-2">(What did you learn?)</span>
+                        Key Learnings <span className="text-muted-foreground font-normal text-sm ml-2">(The "Aha!" Moment)</span>
                     </label>
                     <Textarea
                         id="key_learnings"
                         name="key_learnings"
-                        placeholder="Unexpected findings, customer insights..."
+                        placeholder="What did you discover that you didn't know before starting?"
                         value={formData.key_learnings}
                         onChange={handleChange}
                         disabled={isPending}
@@ -148,12 +148,12 @@ export function Level5Form({ ideaId, levelData, isLocked = false, isOwner = fals
 
                 <div className="space-y-3">
                     <label htmlFor="feedback_impact" className="text-base font-semibold text-foreground">
-                        Feedback Impact <span className="text-muted-foreground font-normal text-sm ml-2">(How did peer feedback influence this?)</span>
+                        Feedback Impact <span className="text-muted-foreground font-normal text-sm ml-2">(Course Correction)</span>
                     </label>
                     <Textarea
                         id="feedback_impact"
                         name="feedback_impact"
-                        placeholder="Changes made based on feedback, valid critiques..."
+                        placeholder="How did the global brain (peer feedback) change your trajectory?"
                         value={formData.feedback_impact}
                         onChange={handleChange}
                         disabled={isPending}
@@ -163,12 +163,12 @@ export function Level5Form({ ideaId, levelData, isLocked = false, isOwner = fals
 
                 <div className="space-y-3">
                     <label htmlFor="pow_url" className="text-base font-semibold text-foreground">
-                        Proof of Work URL <span className="text-muted-foreground font-normal text-sm ml-2">(Public link to evidence/result)</span>
+                        Proof of Work <span className="text-muted-foreground font-normal text-sm ml-2">(Show Your Work)</span>
                     </label>
                     <Input
                         id="pow_url"
                         name="pow_url"
-                        placeholder="e.g. Notion doc, Twitter thread, GitHub repo..."
+                        placeholder="Link to the evidence (Notion doc, Tweets, GitHub, etc.)"
                         value={formData.pow_url}
                         onChange={handleChange}
                         disabled={isPending}

@@ -45,6 +45,17 @@ export function Header() {
                     >
                         New Idea
                     </Link>
+                    <Link
+                        href="/game"
+                        className="relative flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-white group/lab"
+                    >
+                        <svg className="h-4 w-4 text-purple-400 transition-transform group-hover/lab:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                        </svg>
+                        <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent group-hover/lab:from-purple-300 group-hover/lab:to-blue-300">
+                            Growth Lab
+                        </span>
+                    </Link>
                 </nav>
 
                 {/* Mobile New Idea Action */}

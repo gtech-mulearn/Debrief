@@ -1,0 +1,180 @@
+'use server'
+
+import { createServerClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
+import { calculateRoundResults } from '@/lib/simulation-game/engine'
+import { TOTAL_BUDGET_POOL, ADMIN_EMAILS } from '@/lib/simulation-game/constants'
+import { SimDecision, SimTeam } from '@/types/simulation'
+
+export async function createGame() {
+    const supabase = await createServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user || !user.email) throw new Error("Unauthorized")
+
+    if (!ADMIN_EMAILS.includes(user.email)) {
+        throw new Error("Only admins can start a new game simulation.")
+    }
+
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase()
+
+    const { data, error } = await supabase
+        .from('sim_games')
+        .insert({
+            status: 'waiting',
+            current_round: 0,
+            budget_pool: TOTAL_BUDGET_POOL,
+            code: code
+        })
+        .select()
+        .single()
+
+    if (error) throw new Error(error.message)
+    return data
+}
+
+export async function startGame(gameId: string) {
+    const supabase = await createServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user || !user.email) throw new Error("Unauthorized")
+    if (!ADMIN_EMAILS.includes(user.email)) throw new Error("Only admins can start")
+
+    const { error } = await supabase
+        .from('sim_games')
+        .update({ status: 'active' })
+        .eq('id', gameId)
+
+    if (error) throw new Error(error.message)
+    revalidatePath(`/game/${gameId}`)
+}
+
+export async function createTeam(gameId: string, teamName: string) {
+    const supabase = await createServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data, error } = await supabase
+        .from('sim_teams')
+        .insert({
+            game_id: gameId,
+            name: teamName,
+            members: [user.id] // Creator is first member
+        })
+        .select()
+        .single()
+
+    if (error) throw new Error(error.message)
+
+    // Check team count for auto-start
+    const { count } = await supabase
+        .from('sim_teams')
+        .select('*', { count: 'exact', head: true })
+        .eq('game_id', gameId)
+
+    if (count && count >= 5) {
+        await supabase
+            .from('sim_games')
+            .update({ status: 'active' })
+            .eq('id', gameId)
+    }
+
+    revalidatePath(`/game/${gameId}`)
+    return data
+}
+
+export async function submitDecision(gameId: string, teamId: string, roundNumber: number, decisions: Record<string, number>) {
+    const supabase = await createServerClient()
+
+    // Validation: Check if round is correct
+    const { data: game } = await supabase.from('sim_games').select('current_round').eq('id', gameId).single()
+    if (!game || game.current_round !== roundNumber) {
+        throw new Error("Invalid round number")
+    }
+
+    const { error } = await supabase
+        .from('sim_decisions')
+        .upsert({
+            game_id: gameId,
+            team_id: teamId,
+            round_number: roundNumber,
+            decisions
+        }, { onConflict: 'team_id, round_number' })
+
+    if (error) throw new Error(error.message)
+    return { success: true }
+}
+
+export async function processRound(gameId: string) {
+    const supabase = await createServerClient()
+
+    // 1. Fetch Game State
+    const { data: game } = await supabase.from('sim_games').select('*').eq('id', gameId).single()
+    if (!game) throw new Error("Game not found")
+
+    const currentRound = game.current_round
+    if (currentRound >= 6) throw new Error("Game over")
+
+    // 2. Fetch all decisions for this round
+    const { data: decisionsData } = await supabase
+        .from('sim_decisions')
+        .select('*')
+        .eq('game_id', gameId)
+        .eq('round_number', currentRound)
+
+    // 3. Fetch all teams
+    const { data: teamsData } = await supabase
+        .from('sim_teams')
+        .select('*')
+        .eq('game_id', gameId)
+
+    if (!decisionsData || !teamsData) {
+        throw new Error("No data to process")
+    }
+
+    // Cast types
+    const decisions = decisionsData as SimDecision[]
+    const teams = teamsData as SimTeam[]
+
+    // 4. Run Engines
+    const results = calculateRoundResults(decisions, teams, currentRound)
+
+    // 5. Save Results & Update Teams
+    // We need to update budget pool and team totals
+    let totalRoundSpendLocal = 0;
+
+    for (const result of results) {
+        // Save result
+        await supabase.from('sim_results').insert({
+            game_id: gameId,
+            team_id: result.team_id,
+            round_number: currentRound,
+            downloads_earned: result.downloads_earned,
+            efficiency_score: result.efficiency_score,
+            round_spending: result.round_spending,
+            event_log: result.event_log
+        })
+
+        // Update Team Totals
+        const team = teams.find(t => t.id === result.team_id)
+        if (team) {
+            await supabase.from('sim_teams').update({
+                total_spent: Number(team.total_spent) + result.round_spending,
+                total_downloads: Number(team.total_downloads) + result.downloads_earned
+            }).eq('id', result.team_id)
+        }
+
+        totalRoundSpendLocal += result.round_spending
+    }
+
+    // 6. Update Game State (Next Round, Reduce Budget)
+    // Note: Race condition risk here on budget if multiple admin calls, but assuming single facilitator for now.
+    await supabase.from('sim_games').update({
+        current_round: currentRound + 1,
+        budget_pool: Number(game.budget_pool) - totalRoundSpendLocal,
+        status: currentRound + 1 > 6 ? 'completed' : 'active'
+    }).eq('id', gameId)
+
+    revalidatePath(`/game/${gameId}`)
+    return { success: true, results }
+}

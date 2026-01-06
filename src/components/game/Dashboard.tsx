@@ -1,0 +1,420 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { SimGame, SimTeam } from '@/types/simulation'
+import { CHANNELS, TOTAL_BUDGET_POOL, MAX_ROUNDS } from '@/lib/simulation-game/constants'
+import { submitDecision, processRound, startGame } from '@/app/actions/game-actions'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { Badge } from '@/components/ui/badge'
+import { Clock, TrendingUp, TrendingDown, Info, AlertTriangle, Users, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import Leaderboard from './Leaderboard'
+import { useRouter } from 'next/navigation'
+
+interface DashboardProps {
+    game: SimGame
+    team?: SimTeam | null
+    currentUser: string
+}
+
+export default function Dashboard({ game: initialGame, team: initialTeam, currentUser }: DashboardProps) {
+    const router = useRouter()
+    const supabase = createClient()
+
+    const [game, setGame] = useState<SimGame>(initialGame)
+    const [teams, setTeams] = useState<SimTeam[]>(initialTeam ? [initialTeam] : []) // Start with own team
+    const [inputs, setInputs] = useState<Record<string, number>>({})
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [hasSubmitted, setHasSubmitted] = useState(false)
+    const [submittedTeamIds, setSubmittedTeamIds] = useState<string[]>([])
+
+    // Fetch submissions for current round (for Facilitator view)
+    useEffect(() => {
+        const fetchSubmissions = async () => {
+            const { data } = await supabase
+                .from('sim_decisions')
+                .select('team_id')
+                .eq('game_id', game.id)
+                .eq('round_number', game.current_round)
+
+            if (data) {
+                setSubmittedTeamIds(data.map(d => d.team_id))
+            } else {
+                setSubmittedTeamIds([])
+            }
+        }
+        fetchSubmissions()
+    }, [game.id, game.current_round, supabase])
+
+    const isPlayer = !!initialTeam
+
+    // Fetch all teams initially
+    useEffect(() => {
+        const fetchTeams = async () => {
+            const { data } = await supabase.from('sim_teams').select('*').eq('game_id', game.id)
+            if (data) setTeams(data as SimTeam[])
+        }
+        fetchTeams()
+    }, [game.id, supabase])
+
+    // Real-time Subscriptions
+    useEffect(() => {
+        const gameSub = supabase
+            .channel('game_updates')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sim_games', filter: `id=eq.${game.id}` },
+                (payload) => {
+                    const newGame = payload.new as SimGame
+                    setGame(newGame)
+
+                    // Reset submission state on new round
+                    if (newGame.current_round !== game.current_round) {
+                        setHasSubmitted(false)
+                        setInputs({})
+                        toast.info(`Round ${newGame.current_round + 1} Started!`)
+                    }
+
+                    if (newGame.status === 'active' && game.status === 'waiting') {
+                        toast.success("Game Started!")
+                    }
+                }
+            )
+            .subscribe()
+
+        const teamSub = supabase
+            .channel('team_updates')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'sim_teams', filter: `game_id=eq.${game.id}` },
+                async () => {
+                    // Refresh all teams
+                    const { data } = await supabase.from('sim_teams').select('*').eq('game_id', game.id)
+                    if (data) setTeams(data as SimTeam[])
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(gameSub)
+            supabase.removeChannel(teamSub)
+        }
+    }, [game.id, game.current_round, game.status, supabase])
+
+    // Real-time Decisions Subscription (For Facilitator)
+    useEffect(() => {
+        const decisionSub = supabase
+            .channel('decision_updates')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'sim_decisions', filter: `game_id=eq.${game.id}` },
+                (payload) => {
+                    const newDecision = payload.new as { team_id: string, round_number: number }
+                    if (newDecision.round_number === game.current_round) {
+                        setSubmittedTeamIds(prev => {
+                            if (!prev.includes(newDecision.team_id)) return [...prev, newDecision.team_id]
+                            return prev
+                        })
+                    }
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(decisionSub)
+        }
+    }, [game.id, game.current_round, supabase])
+
+    // --- Handlers ---
+
+    const handleInputChange = (channelId: string, value: number) => {
+        setInputs(prev => ({
+            ...prev,
+            [channelId]: value
+        }))
+    }
+
+    const getTotalPlannedSpend = () => {
+        return Object.values(inputs).reduce((a, b) => a + b, 0)
+    }
+
+    const handleSubmit = async () => {
+        if (!initialTeam) return
+        try {
+            setIsSubmitting(true)
+            await submitDecision(game.id, initialTeam.id, game.current_round, inputs)
+            setHasSubmitted(true)
+            toast.success("Decisions submitted! Waiting for other teams...")
+        } catch (error) {
+            toast.error("Failed to submit", { description: error instanceof Error ? error.message : "Unknown error" })
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleProcessRound = async () => {
+        try {
+            setIsSubmitting(true)
+            await processRound(game.id)
+            toast.success("Round processed!")
+        } catch (error) {
+            toast.error("Error processing round", { description: error instanceof Error ? error.message : "Error" })
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleStartGame = async () => {
+        try {
+            setIsSubmitting(true)
+            await startGame(game.id)
+            toast.success("Game started!")
+        } catch (error) {
+            toast.error("Failed to start", { description: error instanceof Error ? error.message : "Error" })
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    // --- Derived State ---
+    const budgetLeftGlobal = game.budget_pool
+    const budgetPercent = (budgetLeftGlobal / TOTAL_BUDGET_POOL) * 100
+    const isCreator = game.created_by === currentUser
+
+    if (game.status === 'completed') {
+        return (
+            <div className="min-h-screen p-6 flex flex-col items-center justify-center">
+                <h1 className="text-4xl font-heading font-bold text-foreground mb-8">
+                    Game Over!
+                </h1>
+                <div className="w-full max-w-2xl">
+                    <Leaderboard teams={teams} />
+                </div>
+                <Button onClick={() => router.push('/game')} className="mt-8 bg-white text-black hover:bg-white/90">Back to Lobby</Button>
+            </div>
+        )
+    }
+
+    if (game.status === 'waiting') {
+        return (
+            <div className="min-h-screen p-6 flex flex-col items-center justify-center space-y-8">
+                <div className="text-center space-y-4">
+                    <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground">Waiting for Players...</h1>
+                    <p className="text-muted-foreground font-sans text-lg">
+                        Share Game ID: <span className="font-mono text-white bg-white/10 px-2 py-1 rounded">{game.id}</span>
+                    </p>
+                </div>
+
+                <Card className="w-full max-w-md glass-panel border-white/10">
+                    <CardHeader>
+                        <CardTitle className="flex justify-between items-center text-foreground font-heading">
+                            <span>Joined Teams</span>
+                            <Badge variant="outline" className="text-muted-foreground">{teams.length} / 5</Badge>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        {teams.map(t => (
+                            <div key={t.id} className="flex items-center gap-2 p-3 rounded bg-white/5 border border-white/5">
+                                <Users className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-foreground font-sans">{t.name}</span>
+                                {t.id === initialTeam?.id && <Badge className="ml-auto bg-white/10 hover:bg-white/20 text-white">You</Badge>}
+                            </div>
+                        ))}
+                        {teams.length === 0 && <div className="text-center text-muted-foreground py-4">No teams yet.</div>}
+                    </CardContent>
+                </Card>
+
+                <div className="flex flex-col items-center gap-4">
+                    {teams.length >= 5 ? (
+                        <div className="flex items-center gap-2 text-green-400 font-sans">
+                            <Loader2 className="w-4 h-4 animate-spin" /> Starting game automatically...
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground font-sans">
+                            Game starts automatically when 5 teams join.
+                        </p>
+                    )}
+
+                    {isCreator && (
+                        <Button
+                            onClick={handleStartGame}
+                            disabled={isSubmitting}
+                            className="bg-white text-black hover:bg-white/90 font-sans px-8 py-6 text-lg"
+                        >
+                            {isSubmitting ? 'Starting...' : 'Start Game Now'}
+                        </Button>
+                    )}
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="min-h-screen bg-slate-950 p-4 font-sans text-slate-100 pb-24">
+
+            {/* --- Top Bar --- */}
+            <div className="max-w-7xl mx-auto mb-6 grid gap-4 md:grid-cols-3">
+                {/* Round Info */}
+                <Card className="bg-slate-900/50 border-slate-800">
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                            <div className="text-sm text-slate-400 uppercase tracking-wider font-bold">Round</div>
+                            <div className="text-3xl font-mono text-white">{game.current_round + 1} <span className="text-slate-500 text-lg">/ {MAX_ROUNDS}</span></div>
+                        </div>
+                        <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                            <Clock className="text-blue-400" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Global Budget Pool */}
+                <Card className="bg-slate-900/50 border-slate-800 md:col-span-2">
+                    <CardContent className="p-4">
+                        <div className="flex justify-between mb-2">
+                            <span className="text-sm text-slate-400 font-bold uppercase tracking-wider">Market Budget Pool</span>
+                            <span className="text-sm font-mono text-green-400">₹{(budgetLeftGlobal / 100000).toFixed(2)} Lakhs Remaining</span>
+                        </div>
+                        <Progress value={budgetPercent} className="h-4 bg-slate-800" indicatorClassName={budgetPercent < 20 ? 'bg-red-500' : 'bg-green-500'} />
+                        <div className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            If this hits ₹0, the game ends immediately for everyone.
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="max-w-7xl mx-auto grid lg:grid-cols-3 gap-6">
+
+                {/* --- Main Game Area (Channels) --- */}
+                <div className="lg:col-span-2 space-y-6">
+                    {isPlayer ? (
+                        <div className="grid md:grid-cols-2 gap-4">
+                            {CHANNELS.map(channel => {
+                                const currentSpend = inputs[channel.id] || 0
+                                const isMaxed = currentSpend > channel.max_spend_per_round
+
+                                return (
+                                    <Card key={channel.id} className={`bg-slate-900 border-slate-800 transition-colors ${hasSubmitted ? 'opacity-50 pointer-events-none' : ''}`}>
+                                        <CardHeader className="p-4 pb-2">
+                                            <div className="flex justify-between items-start">
+                                                <div className="font-bold text-white">{channel.name}</div>
+                                                <Badge variant="outline" className="text-xs bg-slate-950 text-slate-400 border-slate-700">
+                                                    Max: ₹{channel.max_spend_per_round / 100000}L
+                                                </Badge>
+                                            </div>
+                                            <CardDescription className="text-xs text-slate-400 h-8 line-clamp-2">
+                                                {channel.description}
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="p-4 pt-2 space-y-3">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500">Cost/1k: ₹{channel.cost_per_1k}</span>
+                                                <span className={`${currentSpend > 0 ? 'text-green-400' : 'text-slate-600'} font-mono`}>
+                                                    ₹{(currentSpend).toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <Slider
+                                                value={[currentSpend]}
+                                                max={channel.max_spend_per_round * 1.5} // Allow overspending to test limits? No, stick to limits for UX simplicity 
+                                                step={100000}
+                                                onValueChange={(val: number[]) => handleInputChange(channel.id, val[0])}
+                                                className="py-2"
+                                            />
+                                            {channel.efficiency_trend === 'decreasing' && (
+                                                <div className="flex items-center gap-1 text-[10px] text-red-400">
+                                                    <TrendingDown className="w-3 h-3" /> Efficiency drops over time
+                                                </div>
+                                            )}
+                                            {channel.efficiency_trend === 'increasing' && (
+                                                <div className="flex items-center gap-1 text-[10px] text-green-400">
+                                                    <TrendingUp className="w-3 h-3" /> Efficiency improves over time
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <Card className="p-8 border-dashed border-slate-800 bg-transparent flex flex-col items-center justify-center text-center space-y-4">
+                            <Info className="w-12 h-12 text-slate-600" />
+                            <h3 className="text-xl font-heading text-slate-400">Facilitator View</h3>
+                            <p className="text-slate-500 max-w-md">
+                                You are observing this game. The teams are currently playing round {game.current_round + 1}.
+                            </p>
+                        </Card>
+                    )}
+                </div>
+
+                {/* --- Sidebar (Your Stats & Leaderboard) --- */}
+                <div className="space-y-6">
+                    {/* Your Team Status */}
+                    {/* Your Team Status */}
+                    {isPlayer && initialTeam && (
+                        <Card className="bg-blue-950/20 border-blue-500/20">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-blue-400 text-lg">Your Agency: {initialTeam.name}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <div className="text-xs text-slate-400">Planned Spend</div>
+                                        <div className="text-xl font-mono text-white">₹{(getTotalPlannedSpend() / 100000).toFixed(1)}L</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-xs text-slate-400">Total Downloads</div>
+                                        <div className="text-xl font-mono text-white">{Math.floor(initialTeam.total_downloads).toLocaleString()}</div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    <Leaderboard teams={teams} />
+
+                    {/* Admin Controls */}
+                    {isCreator && (
+                        <Card className="bg-red-950/10 border-red-500/20">
+                            <CardHeader className="pb-2"><CardTitle className="text-red-400 text-sm">Facilitator Controls</CardTitle></CardHeader>
+                            <CardContent>
+                                <Button onClick={handleProcessRound} disabled={isSubmitting} variant="destructive" className="w-full">
+                                    End Round {game.current_round + 1} & Calculate
+                                </Button>
+                                <p className="text-[10px] text-red-400 mt-2">
+                                    Pressing this will process all decisions and advance to next round.
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+            </div>
+
+            {/* --- Sticky Footer Action --- */}
+            {isPlayer && (
+                <div className="fixed bottom-0 left-0 w-full bg-slate-950/80 backdrop-blur-md border-t border-slate-800 p-4">
+                    <div className="max-w-7xl mx-auto flex items-center justify-between">
+                        <div className="text-slate-400 text-sm hidden md:block">
+                            Adjust sliders above to allocate your budget.
+                        </div>
+                        <div className="flex gap-4 items-center w-full md:w-auto">
+                            <div className="text-right mr-4">
+                                <div className="text-xs text-slate-500">Round Allocation</div>
+                                <div className={`font-mono font-bold ${getTotalPlannedSpend() > budgetLeftGlobal ? 'text-red-500' : 'text-white'}`}>
+                                    ₹{(getTotalPlannedSpend() / 100000).toFixed(2)}L
+                                </div>
+                            </div>
+                            <Button
+                                size="lg"
+                                onClick={handleSubmit}
+                                disabled={isSubmitting || hasSubmitted || getTotalPlannedSpend() === 0}
+                                className={`w-full md:w-auto ${hasSubmitted ? 'bg-green-600 hover:bg-green-600' : 'bg-blue-600 hover:bg-blue-500'}`}
+                            >
+                                {hasSubmitted ? 'Submitted (Waiting)' : 'Submit Bids'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+        </div>
+    )
+}

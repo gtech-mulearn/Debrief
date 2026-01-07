@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SimDecision, SimGame, SimTeam, SimResult } from "@/types/simulation"
 import { CHANNELS, TOTAL_BUDGET_POOL, MAX_ROUNDS } from '@/lib/simulation-game/constants'
@@ -22,6 +22,68 @@ interface DashboardProps {
     team?: SimTeam | null
     currentUser: string
 }
+
+const ChannelCard = memo(({ channel, currentSpend, onInputChange, isSubmitted }: {
+    channel: typeof CHANNELS[0],
+    currentSpend: number,
+    onInputChange: (id: string, val: number) => void,
+    isSubmitted: boolean
+}) => {
+    return (
+        <Card variant="glass" className={`transition-colors ${isSubmitted ? 'opacity-50 pointer-events-none' : ''}`}>
+            <CardHeader className="p-4 pb-2">
+                <div className="flex justify-between items-start">
+                    <div className="font-bold text-foreground">{channel.name}</div>
+                    <Badge variant="outline" className="text-xs bg-black/20 text-muted-foreground border-white/10">
+                        Max: ₹{channel.max_spend_per_round / 100000}L
+                    </Badge>
+                </div>
+                <CardDescription className="text-xs text-muted-foreground h-8 line-clamp-2">
+                    {channel.description}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 pt-2 space-y-3">
+                <div className="flex justify-end text-sm">
+                    <span className={`${currentSpend > 0 ? 'text-green-400' : 'text-muted-foreground'} font-mono`}>
+                        ₹{(currentSpend).toLocaleString()}
+                    </span>
+                </div>
+                <div className="flex items-center gap-4 py-2">
+                    <Slider
+                        value={[currentSpend]}
+                        max={channel.max_spend_per_round}
+                        step={10000} // Finer control
+                        onValueChange={(val: number[]) => onInputChange(channel.id, val[0])}
+                        className="flex-1"
+                    />
+                    <Input
+                        type="number"
+                        className="w-24 h-8 bg-black/40 border-white/10 font-mono text-xs text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        value={currentSpend}
+                        onChange={(e) => {
+                            const val = parseInt(e.target.value) || 0
+                            // Clamp to max
+                            const clamped = Math.min(val, channel.max_spend_per_round)
+                            onInputChange(channel.id, clamped)
+                        }}
+                        max={channel.max_spend_per_round}
+                    />
+                </div>
+                {channel.efficiency_trend === 'decreasing' && (
+                    <div className="flex items-center gap-1 text-[10px] text-red-400">
+                        <TrendingDown className="w-3 h-3" /> Efficiency drops over time
+                    </div>
+                )}
+                {channel.efficiency_trend === 'increasing' && (
+                    <div className="flex items-center gap-1 text-[10px] text-green-400">
+                        <TrendingUp className="w-3 h-3" /> Efficiency improves over time
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    )
+})
+ChannelCard.displayName = "ChannelCard"
 
 export default function Dashboard({ game: initialGame, team: initialTeam, currentUser }: DashboardProps) {
     const router = useRouter()
@@ -216,12 +278,12 @@ export default function Dashboard({ game: initialGame, team: initialTeam, curren
 
     // --- Handlers ---
 
-    const handleInputChange = (channelId: string, value: number) => {
+    const handleInputChange = useCallback((channelId: string, value: number) => {
         setInputs(prev => ({
             ...prev,
             [channelId]: value
         }))
-    }
+    }, [])
 
     const getTotalPlannedSpend = () => {
         return Object.values(inputs).reduce((a, b) => a + b, 0)
@@ -359,7 +421,13 @@ export default function Dashboard({ game: initialGame, team: initialTeam, curren
                                 {t.id === initialTeam?.id && <Badge className="ml-auto bg-white/10 hover:bg-white/20 text-white">You</Badge>}
                             </div>
                         ))}
-                        {teams.length === 0 && <div className="text-center text-muted-foreground py-4">No teams yet.</div>}
+                        {teams.length === 0 && (
+                            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground border-2 border-dashed border-white/5 rounded-lg bg-black/20">
+                                <Users className="w-8 h-8 mb-2 opacity-50" />
+                                <p>No teams have joined yet.</p>
+                                <p className="text-xs opacity-70">Waiting for players to enter code...</p>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -445,64 +513,15 @@ export default function Dashboard({ game: initialGame, team: initialTeam, curren
                 <div className="lg:col-span-2 space-y-6">
                     {isPlayer ? (
                         <div className="grid md:grid-cols-2 gap-4">
-                            {CHANNELS.map(channel => {
-                                const currentSpend = inputs[channel.id] || 0
-                                const isMaxed = currentSpend > channel.max_spend_per_round
-
-                                return (
-                                    <Card key={channel.id} variant="glass" className={`transition-colors ${hasSubmitted ? 'opacity-50 pointer-events-none' : ''}`}>
-                                        <CardHeader className="p-4 pb-2">
-                                            <div className="flex justify-between items-start">
-                                                <div className="font-bold text-foreground">{channel.name}</div>
-                                                <Badge variant="outline" className="text-xs bg-black/20 text-muted-foreground border-white/10">
-                                                    Max: ₹{channel.max_spend_per_round / 100000}L
-                                                </Badge>
-                                            </div>
-                                            <CardDescription className="text-xs text-muted-foreground h-8 line-clamp-2">
-                                                {channel.description}
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="p-4 pt-2 space-y-3">
-                                            <div className="flex justify-end text-sm">
-                                                <span className={`${currentSpend > 0 ? 'text-green-400' : 'text-muted-foreground'} font-mono`}>
-                                                    ₹{(currentSpend).toLocaleString()}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-4 py-2">
-                                                <Slider
-                                                    value={[currentSpend]}
-                                                    max={channel.max_spend_per_round}
-                                                    step={10000} // Finer control
-                                                    onValueChange={(val: number[]) => handleInputChange(channel.id, val[0])}
-                                                    className="flex-1"
-                                                />
-                                                <Input
-                                                    type="number"
-                                                    className="w-24 h-8 bg-black/40 border-white/10 font-mono text-xs text-right"
-                                                    value={currentSpend}
-                                                    onChange={(e) => {
-                                                        const val = parseInt(e.target.value) || 0
-                                                        // Clamp to max
-                                                        const clamped = Math.min(val, channel.max_spend_per_round)
-                                                        handleInputChange(channel.id, clamped)
-                                                    }}
-                                                    max={channel.max_spend_per_round}
-                                                />
-                                            </div>
-                                            {channel.efficiency_trend === 'decreasing' && (
-                                                <div className="flex items-center gap-1 text-[10px] text-red-400">
-                                                    <TrendingDown className="w-3 h-3" /> Efficiency drops over time
-                                                </div>
-                                            )}
-                                            {channel.efficiency_trend === 'increasing' && (
-                                                <div className="flex items-center gap-1 text-[10px] text-green-400">
-                                                    <TrendingUp className="w-3 h-3" /> Efficiency improves over time
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                )
-                            })}
+                            {CHANNELS.map(channel => (
+                                <ChannelCard
+                                    key={channel.id}
+                                    channel={channel}
+                                    currentSpend={inputs[channel.id] || 0}
+                                    onInputChange={handleInputChange}
+                                    isSubmitted={hasSubmitted}
+                                />
+                            ))}
                         </div>
                     ) : (
                         <Card className="p-6 border-dashed border-slate-700 bg-slate-900/50">
@@ -541,7 +560,7 @@ export default function Dashboard({ game: initialGame, team: initialTeam, curren
                                                 )}
                                                 <span className="text-foreground font-medium">{team.name}</span>
                                             </div>
-                                            <div className="flex gap-4 text-xs font-mono items-center">
+                                            <div className="flex gap-4 text-xs font-mono items-center flex-shrink-0">
                                                 <span className="w-20 text-right text-muted-foreground">₹{(team.total_spent / 100000).toFixed(1)}L</span>
                                                 <span className="w-24 text-right text-foreground font-bold">{Math.floor(team.total_downloads).toLocaleString()}</span>
                                             </div>

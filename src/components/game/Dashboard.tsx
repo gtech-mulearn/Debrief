@@ -499,20 +499,10 @@ export default function Dashboard({ game: initialGame, team: initialTeam, curren
                     </CardContent>
                 </Card>
 
-                {/* Global Budget Pool */}
-                <Card variant="glass" className="md:col-span-2">
-                    <CardContent className="p-4">
-                        <div className="flex justify-between mb-2">
-                            <span className="text-sm text-muted-foreground font-bold uppercase tracking-wider">Market Budget Pool</span>
-                            <span className="text-sm font-mono text-green-400">₹{(budgetLeftGlobal / 100000).toFixed(2)} Lakhs Remaining</span>
-                        </div>
-                        <Progress value={budgetPercent} className="h-4 bg-white/5" indicatorClassName={budgetPercent < 20 ? 'bg-red-500' : 'bg-green-500'} />
-                        <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" />
-                            If this hits ₹0, the game ends immediately for everyone.
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* Global Budget Pool (Removed for Players, only show Round Info) */}
+                <div className="md:col-span-2 hidden md:block">
+                    {/* Placeholder space or additional stats if needed */}
+                </div>
             </div>
 
             <div className="max-w-7xl mx-auto grid lg:grid-cols-3 gap-6">
@@ -545,8 +535,8 @@ export default function Dashboard({ game: initialGame, team: initialTeam, curren
                                         <div className="text-2xl font-mono text-green-400">{submittedTeamIds.length} / {teams.length}</div>
                                     </div>
                                     <div className="bg-white/5 rounded p-3">
-                                        <div className="text-muted-foreground">Budget Remaining</div>
-                                        <div className="text-2xl font-mono text-green-400">₹{(game.budget_pool / 100000).toFixed(1)}L</div>
+                                        <div className="text-muted-foreground">Total Market Spend</div>
+                                        <div className="text-2xl font-mono text-purple-400">₹{(teams.reduce((acc, t) => acc + t.total_spent, 0) / 10000000).toFixed(2)}Cr</div>
                                     </div>
                                 </div>
 
@@ -650,7 +640,7 @@ export default function Dashboard({ game: initialGame, team: initialTeam, curren
                             <Button
                                 size="lg"
                                 onClick={handleSubmit}
-                                disabled={isSubmitting || hasSubmitted || getTotalPlannedSpend() === 0 || getTotalPlannedSpend() > budgetLeftGlobal || getTotalPlannedSpend() > (MAX_TEAM_TOTAL_BUDGET - Number(initialTeam?.total_spent || 0))}
+                                disabled={isSubmitting || hasSubmitted || getTotalPlannedSpend() === 0 || getTotalPlannedSpend() > (MAX_TEAM_TOTAL_BUDGET - Number(initialTeam?.total_spent || 0))}
                                 className={`w-full md:w-auto ${hasSubmitted ? 'bg-green-600 hover:bg-green-600' : ''} ${getTotalPlannedSpend() > (MAX_TEAM_TOTAL_BUDGET - Number(initialTeam?.total_spent || 0)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 variant={hasSubmitted ? "default" : "default"} // Use default for submit
                             >

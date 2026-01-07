@@ -78,10 +78,19 @@ export default function Dashboard({ game: initialGame, team: initialTeam, curren
                             setInputs({})
                             setSubmittedTeamIds([]) // Clear submitted teams for new round
                             toast.info(`Round ${newGame.current_round + 1} Started!`)
+
+                            // Refresh teams to get updated totals after round processing
+                            supabase.from('sim_teams').select('*').eq('game_id', game.id).then(({ data }) => {
+                                if (data) setTeams(data as SimTeam[])
+                            })
                         }
 
                         if (newGame.status === 'active' && prevGame.status === 'waiting') {
                             toast.success("Game Started!")
+                        }
+
+                        if (newGame.status === 'completed' && prevGame.status !== 'completed') {
+                            toast.info("Game Over! 🎉")
                         }
 
                         return newGame
@@ -159,8 +168,20 @@ export default function Dashboard({ game: initialGame, team: initialTeam, curren
     const handleProcessRound = async () => {
         try {
             setIsSubmitting(true)
-            await processRound(game.id)
-            toast.success("Round processed!")
+            const result = await processRound(game.id)
+
+            // Refresh teams to get updated totals
+            const { data: updatedTeams } = await supabase.from('sim_teams').select('*').eq('game_id', game.id)
+            if (updatedTeams) setTeams(updatedTeams as SimTeam[])
+
+            // Show summary of results
+            if (result.results && result.results.length > 0) {
+                const totalDownloads = result.results.reduce((sum, r) => sum + r.downloads_earned, 0)
+                const totalSpent = result.results.reduce((sum, r) => sum + r.round_spending, 0)
+                toast.success(`Round processed! ${totalDownloads.toLocaleString()} downloads, ₹${(totalSpent / 100000).toFixed(1)}L spent`)
+            } else {
+                toast.success("Round processed!")
+            }
         } catch (error) {
             toast.error("Error processing round", { description: error instanceof Error ? error.message : "Error" })
         } finally {
@@ -344,12 +365,38 @@ export default function Dashboard({ game: initialGame, team: initialTeam, curren
                             })}
                         </div>
                     ) : (
-                        <Card className="p-8 border-dashed border-slate-800 bg-transparent flex flex-col items-center justify-center text-center space-y-4">
-                            <Info className="w-12 h-12 text-slate-600" />
-                            <h3 className="text-xl font-heading text-slate-400">Facilitator View</h3>
-                            <p className="text-slate-500 max-w-md">
-                                You are observing this game. The teams are currently playing round {game.current_round + 1}.
-                            </p>
+                        <Card className="p-6 border-dashed border-slate-700 bg-slate-900/50">
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <Info className="w-6 h-6 text-blue-400" />
+                                    <h3 className="text-xl font-heading text-foreground">Facilitator View - Round {game.current_round + 1}</h3>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div className="bg-white/5 rounded p-3">
+                                        <div className="text-muted-foreground">Teams Submitted</div>
+                                        <div className="text-2xl font-mono text-green-400">{submittedTeamIds.length} / {teams.length}</div>
+                                    </div>
+                                    <div className="bg-white/5 rounded p-3">
+                                        <div className="text-muted-foreground">Budget Remaining</div>
+                                        <div className="text-2xl font-mono text-green-400">₹{(game.budget_pool / 100000).toFixed(1)}L</div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="text-sm text-muted-foreground">Team Status:</div>
+                                    {teams.map(team => (
+                                        <div key={team.id} className="flex items-center justify-between p-2 rounded bg-white/5">
+                                            <span className="text-foreground">{team.name}</span>
+                                            {submittedTeamIds.includes(team.id) ? (
+                                                <Badge className="bg-green-500/20 text-green-400">Submitted</Badge>
+                                            ) : (
+                                                <Badge className="bg-yellow-500/20 text-yellow-400">Waiting...</Badge>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </Card>
                     )}
                 </div>

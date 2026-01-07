@@ -463,8 +463,7 @@ export default function Dashboard({ game: initialGame, team: initialTeam, curren
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent className="p-4 pt-2 space-y-3">
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-muted-foreground">Cost/1k: ₹{channel.cost_per_1k}</span>
+                                            <div className="flex justify-end text-sm">
                                                 <span className={`${currentSpend > 0 ? 'text-green-400' : 'text-muted-foreground'} font-mono`}>
                                                     ₹{(currentSpend).toLocaleString()}
                                                 </span>

@@ -24,7 +24,8 @@ export async function createGame() {
             status: 'waiting',
             current_round: 0,
             budget_pool: TOTAL_BUDGET_POOL,
-            code: code
+            code: code,
+            created_by: user.id
         })
         .select()
         .single()
@@ -46,6 +47,12 @@ export async function startGame(gameId: string) {
         .eq('id', gameId)
 
     if (error) throw new Error(error.message)
+
+    // Revalidate both code and UUID paths
+    const { data: gameData } = await supabase.from('sim_games').select('code').eq('id', gameId).single();
+    if (gameData?.code) {
+        revalidatePath(`/game/${gameData.code}`)
+    }
     revalidatePath(`/game/${gameId}`)
 }
 
@@ -54,12 +61,35 @@ export async function createTeam(gameId: string, teamName: string) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
+    // Helper function to revalidate paths
+    const revalidateGamePaths = async () => {
+        const { data: gameData } = await supabase.from('sim_games').select('code').eq('id', gameId).single();
+        if (gameData?.code) {
+            revalidatePath(`/game/${gameData.code}`)
+        }
+        revalidatePath(`/game/${gameId}`) // Fallback for UUID-based access
+    }
+
+    // Check if user is already in a team for this game
+    const { data: existingTeam } = await supabase
+        .from('sim_teams')
+        .select('*')
+        .eq('game_id', gameId)
+        .contains('members', [user.id])
+        .single()
+
+    if (existingTeam) {
+        // User already in a team, revalidate and return
+        await revalidateGamePaths()
+        return existingTeam
+    }
+
     const { data, error } = await supabase
         .from('sim_teams')
         .insert({
             game_id: gameId,
             name: teamName,
-            members: [user.id] // Creator is first member
+            members: [user.id]
         })
         .select()
         .single()
@@ -79,7 +109,8 @@ export async function createTeam(gameId: string, teamName: string) {
             .eq('id', gameId)
     }
 
-    revalidatePath(`/game/${gameId}`)
+    // Revalidate paths for cache freshness
+    await revalidateGamePaths()
     return data
 }
 
@@ -176,5 +207,12 @@ export async function processRound(gameId: string) {
     }).eq('id', gameId)
 
     revalidatePath(`/game/${gameId}`)
+
+    // Also revalidate code-based path
+    const { data: gameData } = await supabase.from('sim_games').select('code').eq('id', gameId).single();
+    if (gameData?.code) {
+        revalidatePath(`/game/${gameData.code}`)
+    }
+
     return { success: true, results }
 }

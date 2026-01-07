@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createTeam } from '@/app/actions/game-actions'
 import { Button } from '@/components/ui/button'
@@ -18,18 +18,42 @@ export default function TeamRegistration({ gameId }: TeamRegistrationProps) {
     const router = useRouter()
     const [teamName, setTeamName] = useState('')
     const [isLoading, setIsLoading] = useState(false)
+    const isSubmittingRef = useRef(false) // Prevent duplicate submissions
 
     const handleCreateTeam = async () => {
-        if (!teamName.trim()) return
+        console.log('[TeamReg] Button clicked!')
+
+        if (!teamName.trim()) {
+            console.log('[TeamReg] Empty team name, returning')
+            return
+        }
+
+        // Prevent multiple simultaneous submissions
+        if (isSubmittingRef.current) {
+            console.log('[TeamReg] Already submitting, ignoring click')
+            return
+        }
+
+        console.log('[TeamReg] Starting submission for team:', teamName)
+        isSubmittingRef.current = true
+        setIsLoading(true)
+
         try {
-            setIsLoading(true)
-            await createTeam(gameId, teamName)
-            toast.success('Team joined successfully!')
-            router.refresh() // Reloads to show dashboard
+            console.log('[TeamReg] Calling createTeam server action...')
+            const result = await createTeam(gameId, teamName)
+            console.log('[TeamReg] createTeam returned:', result)
+
+            toast.success('Team created! Reloading...')
+
+            console.log('[TeamReg] About to call window.location.reload()')
+            // Force hard reload to show Dashboard
+            window.location.reload()
         } catch (error) {
-            toast.error('Failed to create team', { description: error instanceof Error ? error.message : 'Unknown error' })
-        } finally {
+            console.error('[TeamReg] Error creating team:', error)
+            // Reset so user can try again
+            isSubmittingRef.current = false
             setIsLoading(false)
+            toast.error('Failed to join', { description: error instanceof Error ? error.message : 'Unknown error' })
         }
     }
 

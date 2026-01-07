@@ -535,8 +535,8 @@ export default function Dashboard({ game: initialGame, team: initialTeam, curren
                                         <div className="text-2xl font-mono text-green-400">{submittedTeamIds.length} / {teams.length}</div>
                                     </div>
                                     <div className="bg-white/5 rounded p-3">
-                                        <div className="text-muted-foreground">Total Market Spend</div>
-                                        <div className="text-2xl font-mono text-purple-400">₹{(teams.reduce((acc, t) => acc + t.total_spent, 0) / 10000000).toFixed(2)}Cr</div>
+                                        <div className="text-muted-foreground">Market Budget Left</div>
+                                        <div className="text-2xl font-mono text-green-400">₹{((TOTAL_BUDGET_POOL - teams.reduce((acc, t) => acc + t.total_spent, 0)) / 10000000).toFixed(2)}Cr</div>
                                     </div>
                                 </div>
 

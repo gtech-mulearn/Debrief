@@ -2,7 +2,8 @@
  * Single Idea API Route
  * 
  * GET /api/ideas/[id] - Get a single idea with details
- * DELETE /api/ideas/[id] - Delete an idea (owner only)
+ * PATCH /api/ideas/[id] - Update an idea (owner or editor/admin collaborator)
+ * DELETE /api/ideas/[id] - Delete an idea (owner or admin collaborator)
  */
 
 import { NextRequest } from "next/server";
@@ -12,6 +13,7 @@ import {
   NotFoundError,
   UnauthorizedError,
   ForbiddenError,
+  ValidationError,
   withErrorHandling,
 } from "@/lib/api/errors";
 import { enrichOneWithProfile } from "@/lib/db-utils";
@@ -44,6 +46,50 @@ interface VoteRow {
   value: number;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Helper to check if a user can edit an idea (owner or editor/admin collaborator)
+ */
+async function canUserEditIdea(
+  supabase: any,
+  ideaId: string,
+  userId: string,
+  ownerId: string
+): Promise<boolean> {
+  if (userId === ownerId) return true;
+
+  const { data: collab } = await supabase
+    .from("idea_collaborators")
+    .select("role, status")
+    .eq("idea_id", ideaId)
+    .eq("user_id", userId)
+    .eq("status", "accepted")
+    .single();
+
+  return collab && (collab.role === "editor" || collab.role === "admin");
+}
+
+/**
+ * Helper to check if a user can delete an idea (owner or admin collaborator)
+ */
+async function canUserDeleteIdea(
+  supabase: any,
+  ideaId: string,
+  userId: string,
+  ownerId: string
+): Promise<boolean> {
+  if (userId === ownerId) return true;
+
+  const { data: collab } = await supabase
+    .from("idea_collaborators")
+    .select("role, status")
+    .eq("idea_id", ideaId)
+    .eq("user_id", userId)
+    .eq("status", "accepted")
+    .single();
+
+  return collab && collab.role === "admin";
 }
 
 /**
@@ -90,10 +136,81 @@ export const GET = withErrorHandling(async (request: NextRequest, context: Route
   });
 });
 
+/**
+ * PATCH /api/ideas/[id]
+ * Update an idea (owner or editor/admin collaborator)
+ */
+export const PATCH = withErrorHandling(async (request: NextRequest, context: RouteContext) => {
+  const { id } = await context.params;
+  const user = await getUser();
+
+  if (!user) {
+    throw new UnauthorizedError();
+  }
+
+  const body = await request.json();
+  const { title, description } = body;
+
+  // Validate at least one field is provided
+  if (!title && !description) {
+    throw new ValidationError({ general: ["Provide at least a title or description to update"] });
+  }
+
+  // Validate fields
+  if (title && (typeof title !== "string" || title.trim().length < 3)) {
+    throw new ValidationError({ title: ["Title must be at least 3 characters"] });
+  }
+  if (description && (typeof description !== "string" || description.trim().length < 10)) {
+    throw new ValidationError({ description: ["Description must be at least 10 characters"] });
+  }
+
+  const supabase = await createServerClient();
+
+  // Check if idea exists
+  const { data } = await supabase
+    .from("ideas")
+    .select("id, user_id, title, description")
+    .eq("id", id)
+    .single();
+
+  if (!data) {
+    throw new NotFoundError("Idea not found");
+  }
+
+  const idea = data as { id: string; user_id: string; title: string; description: string };
+
+  // Check permission
+  const canEdit = await canUserEditIdea(supabase, id, user.id, idea.user_id);
+  if (!canEdit) {
+    throw new ForbiddenError("You don't have permission to edit this idea");
+  }
+
+  // Build update object
+  const updates: { title?: string; description?: string; updated_at: string } = {
+    updated_at: new Date().toISOString(),
+  };
+  if (title) updates.title = title.trim();
+  if (description) updates.description = description.trim();
+
+  // Update using admin client to bypass RLS
+  const adminClient = createAdminClient();
+  const { data: updated, error } = await adminClient
+    .from("ideas")
+    .update(updates)
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return successResponse({ data: updated, message: "Idea updated successfully" });
+});
 
 /**
  * DELETE /api/ideas/[id]
- * Delete an idea (owner only)
+ * Delete an idea (owner or admin collaborator)
  */
 export const DELETE = withErrorHandling(async (request: NextRequest, context: RouteContext) => {
   const { id } = await context.params;
@@ -105,7 +222,7 @@ export const DELETE = withErrorHandling(async (request: NextRequest, context: Ro
 
   const supabase = await createServerClient();
 
-  // Check if idea exists and user owns it
+  // Check if idea exists and get owner
   const { data } = await supabase
     .from("ideas")
     .select("id, user_id")
@@ -118,8 +235,10 @@ export const DELETE = withErrorHandling(async (request: NextRequest, context: Ro
     throw new NotFoundError("Idea not found");
   }
 
-  if (idea.user_id !== user.id) {
-    throw new ForbiddenError("You can only delete your own ideas");
+  // Check permission
+  const canDelete = await canUserDeleteIdea(supabase, id, user.id, idea.user_id);
+  if (!canDelete) {
+    throw new ForbiddenError("You don't have permission to delete this idea");
   }
 
   // Delete using admin client
@@ -135,4 +254,3 @@ export const DELETE = withErrorHandling(async (request: NextRequest, context: Ro
 
   return successResponse({ message: "Idea deleted" });
 });
-

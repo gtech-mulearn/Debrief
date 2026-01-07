@@ -25,6 +25,7 @@ import { ValuationCard } from "@/components/social/ValuationCard";
 import { PivotDialog, PivotTimeline } from "@/components/pivot";
 import { CollaboratorSettings } from "@/components/collaboration";
 import { useCollaboratorRole } from "@/hooks/use-collaborators";
+import { IdeaActionsMenu } from "@/components/idea";
 
 interface IdeaDetailClientProps {
     id: string;
@@ -201,19 +202,32 @@ function IdeaDetail({
                             />
                         )}
                         <BackingDialog ideaId={idea.id} />
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="gap-2 h-10 w-10 sm:w-auto sm:px-4 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 text-muted-foreground hover:text-foreground transition-all text-sm justify-center"
-                            onClick={() => {
-                                const url = `${window.location.origin}/share/${idea.id}`;
-                                navigator.clipboard.writeText(url);
-                                toast.success("Public link copied!");
-                            }}
-                        >
-                            <Share2 className="h-4 w-4" />
-                            <span className="hidden sm:inline">Share</span>
-                        </Button>
+
+                        {/* Actions Menu for Edit/Delete/Share */}
+                        <IdeaActionsMenu
+                            ideaId={idea.id}
+                            ideaTitle={idea.title}
+                            ideaDescription={idea.description}
+                            canEdit={canEdit}
+                            canDelete={canManage}
+                        />
+
+                        {/* Fallback Share button if no edit/delete access */}
+                        {!canEdit && !canManage && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="gap-2 h-10 w-10 sm:w-auto sm:px-4 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 text-muted-foreground hover:text-foreground transition-all text-sm justify-center"
+                                onClick={() => {
+                                    const url = `${window.location.origin}/share/${idea.id}`;
+                                    navigator.clipboard.writeText(url);
+                                    toast.success("Public link copied!");
+                                }}
+                            >
+                                <Share2 className="h-4 w-4" />
+                                <span className="hidden sm:inline">Share</span>
+                            </Button>
+                        )}
                     </div>
                 </div>
 

@@ -17,8 +17,10 @@ import {
   fetchIdeas,
   fetchIdea,
   createIdea,
+  updateIdea,
   deleteIdea,
 } from "@/lib/api/client/ideas";
+import type { UpdateIdeaRequest } from "@/lib/api/client/ideas";
 import { toast } from "sonner";
 import type { CreateIdeaRequest } from "@/types/api";
 
@@ -92,6 +94,29 @@ export function useCreateIdea() {
 }
 
 /**
+ * Hook for updating an idea
+ */
+export function useUpdateIdea(id: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateIdeaRequest) => updateIdea(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ideaKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
+      toast.success("Idea updated!");
+    },
+    onError: (err) => {
+      if (err.message?.includes("Forbidden") || err.message?.includes("403")) {
+        toast.error("You don't have permission to edit this idea");
+      } else {
+        toast.error(err.message || "Failed to update idea");
+      }
+    },
+  });
+}
+
+/**
  * Hook for deleting an idea
  */
 export function useDeleteIdea() {
@@ -105,7 +130,12 @@ export function useDeleteIdea() {
       toast.success("Idea deleted");
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to delete idea");
+      if (err.message?.includes("Forbidden") || err.message?.includes("403")) {
+        toast.error("You don't have permission to delete this idea");
+      } else {
+        toast.error(err.message || "Failed to delete idea");
+      }
     },
   });
 }
+

@@ -77,6 +77,29 @@ export async function createIdea(
 }
 
 /**
+ * Update an idea
+ */
+export interface UpdateIdeaRequest {
+  title?: string;
+  description?: string;
+}
+
+export async function updateIdea(id: string, data: UpdateIdeaRequest): Promise<GetIdeaResponse> {
+  const response = await fetch(`${API_BASE}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to update idea");
+  }
+
+  return response.json();
+}
+
+/**
  * Delete an idea
  */
 export async function deleteIdea(id: string): Promise<void> {
@@ -89,3 +112,4 @@ export async function deleteIdea(id: string): Promise<void> {
     throw new Error(error.message || "Failed to delete idea");
   }
 }
+

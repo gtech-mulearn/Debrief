@@ -4,7 +4,7 @@ import { CHANNELS } from '@/lib/simulation-game/constants'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Trophy, TrendingUp, DollarSign, ChevronRight, PieChart } from "lucide-react"
+import { Trophy, TrendingUp, DollarSign, ChevronRight, PieChart, Gem, Medal } from "lucide-react"
 
 interface LeaderboardProps {
     teams: SimTeam[]
@@ -70,22 +70,45 @@ export default function Leaderboard({ teams, gameId, isFacilitator = false }: Le
                                 ? (team.total_downloads / (team.total_spent / 100000)).toFixed(1)
                                 : "0.0"
 
+                            // Styles based on rank
+                            const isWinner = index === 0
+                            const isSecond = index === 1
+                            const isThird = index === 2
+
+                            let bgClass = 'bg-white/5 border-white/5 hover:bg-white/10'
+                            let textClass = 'text-base'
+                            let rankIcon = null
+
+                            if (isWinner) {
+                                bgClass = 'bg-cyan-500/10 border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.3)] scale-[1.02] z-10 my-2'
+                                textClass = 'text-xl font-bold'
+                                rankIcon = <Gem className="w-8 h-8 text-cyan-400 fill-cyan-400/20 animate-pulse" />
+                            } else if (isSecond) {
+                                bgClass = 'bg-yellow-500/10 border-yellow-500/30 my-1'
+                                textClass = 'text-lg'
+                                rankIcon = <Trophy className="w-6 h-6 text-yellow-400" />
+                            } else if (isThird) {
+                                bgClass = 'bg-orange-500/10 border-orange-500/20'
+                                textClass = 'text-base'
+                                rankIcon = <Medal className="w-6 h-6 text-orange-400" />
+                            }
+
                             return (
                                 <div
                                     key={team.id}
                                     onClick={() => handleTeamClick(team)}
-                                    className={`flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 transition-colors ${isFacilitator ? 'cursor-pointer hover:bg-white/10' : ''}`}
+                                    className={`flex items-center justify-between p-3 rounded-lg transition-all border ${bgClass} ${isFacilitator ? 'cursor-pointer' : ''}`}
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold
-                        ${index === 0 ? 'bg-yellow-500/20 text-yellow-500' :
-                                                index === 1 ? 'bg-slate-400/20 text-slate-400' :
-                                                    index === 2 ? 'bg-orange-500/20 text-orange-500' : 'bg-white/5 text-muted-foreground'}
-                      `}>
-                                            {index + 1}
+                                    <div className="flex items-center gap-4">
+                                        <div className={`flex items-center justify-center font-bold shrink-0 ${isWinner ? 'w-10 h-10' : 'w-8 h-8'}`}>
+                                            {rankIcon ? rankIcon : (
+                                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground">
+                                                    {index + 1}
+                                                </div>
+                                            )}
                                         </div>
                                         <div>
-                                            <div className="text-sm font-medium text-foreground flex items-center gap-2">
+                                            <div className={`font-medium flex items-center gap-2 text-foreground ${textClass}`}>
                                                 {team.name}
                                                 {isFacilitator && <ChevronRight className="w-3 h-3 text-muted-foreground opacity-50" />}
                                             </div>
@@ -95,7 +118,7 @@ export default function Leaderboard({ teams, gameId, isFacilitator = false }: Le
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-sm font-bold text-green-400 flex items-center justify-end gap-1">
+                                        <div className={`font-bold flex items-center justify-end gap-1 ${isWinner ? 'text-cyan-400 text-lg' : 'text-green-400 text-sm'}`}>
                                             {efficiency} <span className="text-xs font-normal text-muted-foreground">/ ₹1L</span>
                                         </div>
                                         <div className="text-xs text-muted-foreground">

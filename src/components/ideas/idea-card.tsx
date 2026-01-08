@@ -81,7 +81,7 @@ export function IdeaCard({ idea, variant = "glass" }: IdeaCardProps) {
                             </Avatar>
                             <div className="flex flex-col">
                                 <span className="text-sm font-medium text-foreground/90 line-clamp-1">{idea.author?.full_name || "Anonymous"}</span>
-                                <span className="text-xs text-muted-foreground">{formatDistanceToNow(idea.created_at)} ago</span>
+                                <span className="text-xs text-muted-foreground">{formatDistanceToNow(idea.created_at)}</span>
                             </div>
                         </div>
 

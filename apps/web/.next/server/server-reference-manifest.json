@@ -1,0 +1,98 @@
+{
+  "node": {
+    "0010576cbce51f2e5055c1e199f288c20d55c5cfcf": {
+      "workers": {
+        "app/_not-found/page": {
+          "moduleId": 62507,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        },
+        "app/admin/analytics/page": {
+          "moduleId": 16912,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        },
+        "app/auth/redirect/page": {
+          "moduleId": 89401,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        },
+        "app/ideas/[id]/page": {
+          "moduleId": 17691,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        },
+        "app/ideas/new/page": {
+          "moduleId": 86376,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        },
+        "app/invites/[token]/accept/page": {
+          "moduleId": 63747,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        },
+        "app/login/page": {
+          "moduleId": 30982,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        },
+        "app/page": {
+          "moduleId": 32020,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        },
+        "app/privacy/page": {
+          "moduleId": 54452,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        },
+        "app/profile/page": {
+          "moduleId": 55064,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        },
+        "app/share/[id]/page": {
+          "moduleId": 7598,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        },
+        "app/terms/page": {
+          "moduleId": 48520,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        }
+      },
+      "layer": {
+        "app/_not-found/page": "action-browser",
+        "app/admin/analytics/page": "action-browser",
+        "app/auth/redirect/page": "action-browser",
+        "app/ideas/[id]/page": "action-browser",
+        "app/ideas/new/page": "action-browser",
+        "app/invites/[token]/accept/page": "action-browser",
+        "app/login/page": "action-browser",
+        "app/page": "action-browser",
+        "app/privacy/page": "action-browser",
+        "app/profile/page": "action-browser",
+        "app/share/[id]/page": "action-browser",
+        "app/terms/page": "action-browser"
+      },
+      "filename": "apps/web/src/app/actions/admin-actions.ts",
+      "exportedName": "checkIsAdmin"
+    }
+  },
+  "edge": {},
+  "encryptionKey": "uMhLBWtzzc6ZlEeRi0EU1hDR4tgmGiWkxQyASdJjA8w="
+}

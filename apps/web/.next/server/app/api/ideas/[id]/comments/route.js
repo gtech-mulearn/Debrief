@@ -1,0 +1,11 @@
+var R=require("../../../../../chunks/[turbopack]_runtime.js")("server/app/api/ideas/[id]/comments/route.js")
+R.c("server/chunks/[root-of-the-server]__32de1cb8._.js")
+R.c("server/chunks/node_modules_zod_v4_classic_external_fa90cebf.js")
+R.c("server/chunks/node_modules_zod_v4_classic_schemas_6da89d97.js")
+R.c("server/chunks/apps_web_src_lib_api_errors_ts_46e53cf7._.js")
+R.c("server/chunks/_0449e6fc._.js")
+R.c("server/chunks/[root-of-the-server]__caaf520f._.js")
+R.c("server/chunks/[root-of-the-server]__e867198f._.js")
+R.c("server/chunks/0da96_web__next-internal_server_app_api_ideas_[id]_comments_route_actions_2a751094.js")
+R.m(95632)
+module.exports=R.m(95632).exports

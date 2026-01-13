@@ -1,0 +1,173 @@
+{
+  "node": {
+    "001f1bd6b1b941ab921a271cfb25953d421d24e12a": {
+      "workers": {
+        "app/_not-found/page": {
+          "moduleId": 91405,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        },
+        "app/admin/analytics/page": {
+          "moduleId": 2120,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        },
+        "app/auth/redirect/page": {
+          "moduleId": 88795,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        },
+        "app/game/[gameId]/page": {
+          "moduleId": 87995,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        },
+        "app/game/admin/page": {
+          "moduleId": 7398,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        },
+        "app/game/page": {
+          "moduleId": 58271,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        },
+        "app/invites/[token]/accept/page": {
+          "moduleId": 49728,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        },
+        "app/login/page": {
+          "moduleId": 49478,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        },
+        "app/page": {
+          "moduleId": 94335,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        },
+        "app/privacy/page": {
+          "moduleId": 15505,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        },
+        "app/profile/page": {
+          "moduleId": 94365,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        },
+        "app/terms/page": {
+          "moduleId": 23678,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        }
+      },
+      "layer": {
+        "app/_not-found/page": "action-browser",
+        "app/admin/analytics/page": "action-browser",
+        "app/auth/redirect/page": "action-browser",
+        "app/game/[gameId]/page": "action-browser",
+        "app/game/admin/page": "action-browser",
+        "app/game/page": "action-browser",
+        "app/invites/[token]/accept/page": "action-browser",
+        "app/login/page": "action-browser",
+        "app/page": "action-browser",
+        "app/privacy/page": "action-browser",
+        "app/profile/page": "action-browser",
+        "app/terms/page": "action-browser"
+      },
+      "filename": "apps/game/src/app/actions/admin-actions.ts",
+      "exportedName": "checkIsAdmin"
+    },
+    "60f9b640f99ec120bcc73f4954089ebe5edac02354": {
+      "workers": {
+        "app/game/[gameId]/page": {
+          "moduleId": 87995,
+          "async": false,
+          "exportedName": "createTeam",
+          "filename": "apps/game/src/app/actions/game-actions.ts"
+        }
+      },
+      "layer": {
+        "app/game/[gameId]/page": "action-browser"
+      },
+      "filename": "apps/game/src/app/actions/game-actions.ts",
+      "exportedName": "createTeam"
+    },
+    "783947e2bd01bdd67692ee64fbc381260478a18fb1": {
+      "workers": {
+        "app/game/[gameId]/page": {
+          "moduleId": 87995,
+          "async": false,
+          "exportedName": "submitDecision",
+          "filename": "apps/game/src/app/actions/game-actions.ts"
+        }
+      },
+      "layer": {
+        "app/game/[gameId]/page": "action-browser"
+      },
+      "filename": "apps/game/src/app/actions/game-actions.ts",
+      "exportedName": "submitDecision"
+    },
+    "40f7d502f1905578d7237e9191b177cd2c617686d6": {
+      "workers": {
+        "app/game/[gameId]/page": {
+          "moduleId": 87995,
+          "async": false,
+          "exportedName": "processRound",
+          "filename": "apps/game/src/app/actions/game-actions.ts"
+        }
+      },
+      "layer": {
+        "app/game/[gameId]/page": "action-browser"
+      },
+      "filename": "apps/game/src/app/actions/game-actions.ts",
+      "exportedName": "processRound"
+    },
+    "40d86802a7cfd4de90f6f204e55e140f6117a9b2c0": {
+      "workers": {
+        "app/game/[gameId]/page": {
+          "moduleId": 87995,
+          "async": false,
+          "exportedName": "startGame",
+          "filename": "apps/game/src/app/actions/game-actions.ts"
+        }
+      },
+      "layer": {
+        "app/game/[gameId]/page": "action-browser"
+      },
+      "filename": "apps/game/src/app/actions/game-actions.ts",
+      "exportedName": "startGame"
+    },
+    "006adc999aa636125d093180d8c816b171cac83965": {
+      "workers": {
+        "app/game/admin/page": {
+          "moduleId": 7398,
+          "async": false,
+          "exportedName": "createGame",
+          "filename": "apps/game/src/app/actions/game-actions.ts"
+        }
+      },
+      "layer": {
+        "app/game/admin/page": "action-browser"
+      },
+      "filename": "apps/game/src/app/actions/game-actions.ts",
+      "exportedName": "createGame"
+    }
+  },
+  "edge": {},
+  "encryptionKey": "/9qMtGZOZKw0qnuhc+9RPA3TPBEKREPDBWnRZt/hT48="
+}

@@ -1,0 +1,35 @@
+{
+  "node": {
+    "001f1bd6b1b941ab921a271cfb25953d421d24e12a": {
+      "workers": {
+        "app/game/admin/page": {
+          "moduleId": 7398,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        }
+      },
+      "layer": {
+        "app/game/admin/page": "action-browser"
+      },
+      "exportedName": "checkIsAdmin",
+      "filename": "apps/game/src/app/actions/admin-actions.ts"
+    },
+    "006adc999aa636125d093180d8c816b171cac83965": {
+      "workers": {
+        "app/game/admin/page": {
+          "moduleId": 7398,
+          "async": false,
+          "exportedName": "createGame",
+          "filename": "apps/game/src/app/actions/game-actions.ts"
+        }
+      },
+      "layer": {
+        "app/game/admin/page": "action-browser"
+      },
+      "exportedName": "createGame",
+      "filename": "apps/game/src/app/actions/game-actions.ts"
+    }
+  },
+  "edge": {}
+}

@@ -1,0 +1,20 @@
+{
+  "node": {
+    "0010576cbce51f2e5055c1e199f288c20d55c5cfcf": {
+      "workers": {
+        "app/ideas/[id]/page": {
+          "moduleId": 17691,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/web/src/app/actions/admin-actions.ts"
+        }
+      },
+      "layer": {
+        "app/ideas/[id]/page": "action-browser"
+      },
+      "exportedName": "checkIsAdmin",
+      "filename": "apps/web/src/app/actions/admin-actions.ts"
+    }
+  },
+  "edge": {}
+}

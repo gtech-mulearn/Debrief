@@ -1,0 +1,20 @@
+{
+  "node": {
+    "001f1bd6b1b941ab921a271cfb25953d421d24e12a": {
+      "workers": {
+        "app/login/page": {
+          "moduleId": 49478,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        }
+      },
+      "layer": {
+        "app/login/page": "action-browser"
+      },
+      "exportedName": "checkIsAdmin",
+      "filename": "apps/game/src/app/actions/admin-actions.ts"
+    }
+  },
+  "edge": {}
+}

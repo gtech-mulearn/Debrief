@@ -13,14 +13,22 @@ import { AuthButton } from "./auth-button";
 import { cn } from "@/lib/utils";
 import { Menu, X, Home, PlusCircle, Sparkles, BarChart3 } from "lucide-react";
 import { useAuth } from "@/hooks";
-import { ADMIN_EMAILS } from "@/lib/simulation-game/constants";
+import { checkIsAdmin } from "@/app/actions/admin-actions";
+import { useEffect } from "react";
 
 export function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { user } = useAuth();
+    const [isAdmin, setIsAdmin] = useState(false);
 
     // Check if current user is an admin
-    const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
+    useEffect(() => {
+        if (user) {
+            checkIsAdmin().then(setIsAdmin);
+        } else {
+            setIsAdmin(false);
+        }
+    }, [user]);
 
     return (
         <header className="fixed top-2 md:top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">

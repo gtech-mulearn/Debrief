@@ -12,18 +12,18 @@ import { NextResponse, type NextRequest } from "next/server";
 function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  
+
   if (!url || !key) {
     console.warn("Supabase env vars not configured, skipping auth middleware");
     return null;
   }
-  
+
   return { url, key };
 }
 
 export async function updateSession(request: NextRequest) {
   const config = getSupabaseConfig();
-  
+
   // If no config, just pass through
   if (!config) {
     return NextResponse.next({ request });
@@ -71,7 +71,7 @@ const authRoutes = ["/login"];
 
 export async function authMiddleware(request: NextRequest) {
   const config = getSupabaseConfig();
-  
+
   // If no config, just pass through
   if (!config) {
     return NextResponse.next({ request });
@@ -95,7 +95,7 @@ export async function authMiddleware(request: NextRequest) {
           getAll() {
             return request.cookies.getAll();
           },
-          setAll() {},
+          setAll() { },
         },
       }
     );
@@ -114,16 +114,24 @@ export async function authMiddleware(request: NextRequest) {
 
     // Role-based protection: Admin
     if (pathname.startsWith("/admin") && user) {
-       // Hardcoded admin check to match client-side logic
-       // Ideally this matches constants.ts but for safety in edge runtime we can duplicate or ensure import works
-       // Importing constants.ts should work if it has no node-dependencies
-       const ADMIN_EMAILS = ["sachin@mulearn.org", "admin@debrief.com", "awindsr@gmail.com"];
-       
-       if (!user.email || !ADMIN_EMAILS.includes(user.email)) {
-          const url = request.nextUrl.clone();
-          url.pathname = "/"; // Redirect unauthorized access to home
-          return NextResponse.redirect(url);
-       }
+      if (!user.email) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
+
+      // Verify against app_admins table
+      const { data } = await supabase
+        .from('app_admins')
+        .select('email')
+        .eq('email', user.email)
+        .single();
+
+      if (!data) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/"; // Redirect unauthorized access to home
+        return NextResponse.redirect(url);
+      }
     }
 
     // Redirect authenticated users from auth routes

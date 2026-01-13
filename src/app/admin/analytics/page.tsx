@@ -5,6 +5,7 @@ import { UserAnalytics } from "../components/UserAnalytics";
 import { IdeaAnalytics } from "../components/IdeaAnalytics";
 import { GameAnalytics } from "../components/GameAnalytics";
 import { ExportPanel } from "../components/ExportPanel";
+import { AdminManagement } from "../components/AdminManagement";
 
 export default function AdminAnalyticsPage() {
     return (
@@ -18,10 +19,11 @@ export default function AdminAnalyticsPage() {
             </div>
 
             <Tabs defaultValue="users" className="space-y-8">
-                <TabsList className="bg-white/5 border border-white/10 p-1 h-auto">
+                <TabsList className="bg-white/5 border border-white/10 p-1 h-auto overflow-x-auto w-full justify-start">
                     <TabsTrigger value="users" className="px-6 py-2.5 data-[state=active]:bg-white/10">Users & Growth</TabsTrigger>
                     <TabsTrigger value="ideas" className="px-6 py-2.5 data-[state=active]:bg-white/10">Idea Pipeline</TabsTrigger>
                     <TabsTrigger value="games" className="px-6 py-2.5 data-[state=active]:bg-white/10">Simulation Game</TabsTrigger>
+                    <TabsTrigger value="settings" className="px-6 py-2.5 data-[state=active]:bg-white/10">Settings</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="users" className="space-y-6 outline-none">
@@ -34,6 +36,10 @@ export default function AdminAnalyticsPage() {
 
                 <TabsContent value="games" className="space-y-6 outline-none">
                     <GameAnalytics />
+                </TabsContent>
+
+                <TabsContent value="settings" className="space-y-6 outline-none">
+                    <AdminManagement />
                 </TabsContent>
             </Tabs>
         </div>

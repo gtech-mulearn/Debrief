@@ -1,6 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { ADMIN_EMAILS } from '@/lib/simulation-game/constants';
+import { requireAdmin } from '@/lib/utils/admin';
 
 // Force dynamic to ensure we get fresh data
 export const dynamic = 'force-dynamic';
@@ -8,16 +8,10 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     const supabase = await createServerClient();
-    
-    // 1. Auth Check
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session || !session.user || !session.user.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
-    if (!ADMIN_EMAILS.includes(session.user.email)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    // 1. Auth Check
+    await requireAdmin();
+    // 1. Auth Check is done by requireAdmin
 
     // 2. Fetch Data in Parallel
     const [

@@ -1,17 +1,14 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { ADMIN_EMAILS } from '@/lib/simulation-game/constants';
+import { requireAdmin } from '@/lib/utils/admin';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
     const supabase = await createServerClient();
-    
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session || !session.user || !session.user.email || !ADMIN_EMAILS.includes(session.user.email)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+
+    await requireAdmin();
 
     const [
       { data: summary },

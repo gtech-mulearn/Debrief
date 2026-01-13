@@ -7,10 +7,20 @@ import { BadgeList } from "@/components/gamification/BadgeList";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
 import { redirect } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { checkIsAdmin } from "@/app/actions/admin-actions";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function ProfilePage() {
     const { user, loading } = useAuth();
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            checkIsAdmin().then(setIsAdmin);
+        }
+    }, [user]);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -48,6 +58,13 @@ export default function ProfilePage() {
                         <h1 className="font-display text-3xl font-bold">{user.user_metadata.full_name}</h1>
                         <p className="text-muted-foreground">{user.email}</p>
                     </div>
+                    {isAdmin && (
+                        <Button variant="outline" className="ml-auto" asChild>
+                            <Link href="/admin/analytics">
+                                Admin Dashboard
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 {/* Stats */}

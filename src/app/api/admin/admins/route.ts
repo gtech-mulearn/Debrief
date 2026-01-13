@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient, createAdminClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/utils/admin';
 
@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        await requireAdmin();
-        const supabase = await createServerClient();
+        await requireAdmin(); // Auth Check (uses user context, respects new RLS)
+        const supabase = createAdminClient(); // Service Role (Bypasses RLS for listing)
 
         // Fetch all admins
         const { data: admins, error } = await supabase
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
         if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
 
-        const supabase = await createServerClient();
+        const supabase = createAdminClient();
         const { error } = await supabase.from('app_admins').insert({
             email,
             created_by: creator.id
@@ -51,7 +51,7 @@ export async function DELETE(request: Request) {
 
         if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
 
-        const supabase = await createServerClient();
+        const supabase = createAdminClient();
         const { error } = await supabase.from('app_admins').delete().eq('email', email);
 
         if (error) throw error;

@@ -8,7 +8,7 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, Pencil, Trash2, Share2, Copy } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, Share2, Copy, Globe, Lock } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -20,11 +20,14 @@ import { Button } from "@/components/ui/button";
 import { EditIdeaDialog } from "./EditIdeaDialog";
 import { DeleteIdeaDialog } from "./DeleteIdeaDialog";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 interface IdeaActionsMenuProps {
     ideaId: string;
     ideaTitle: string;
     ideaDescription: string;
+    visibility: "public" | "private";
     canEdit: boolean;
     canDelete: boolean;
 }
@@ -35,9 +38,29 @@ export function IdeaActionsMenu({
     ideaDescription,
     canEdit,
     canDelete,
+    visibility,
 }: IdeaActionsMenuProps) {
     const [editOpen, setEditOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
+    const router = useRouter();
+
+    const handleToggleVisibility = async () => {
+        const supabase = createClient();
+        const newVisibility = visibility === "public" ? "private" : "public";
+
+        const { error } = await supabase
+            .from("ideas")
+            .update({ visibility: newVisibility })
+            .eq("id", ideaId);
+
+        if (error) {
+            toast.error("Failed to update visibility");
+            return;
+        }
+
+        toast.success(`Idea is now ${newVisibility}`);
+        router.refresh();
+    };
 
     const handleCopyLink = () => {
         const url = `${window.location.origin}/share/${ideaId}`;
@@ -76,7 +99,36 @@ export function IdeaActionsMenu({
                         Share
                     </DropdownMenuItem>
 
+                    {/* Share option - always visible */}
+                    <DropdownMenuItem
+                        onClick={handleCopyLink}
+                        className="cursor-pointer gap-2 text-muted-foreground hover:text-foreground"
+                    >
+                        <Copy className="h-4 w-4" />
+                        Share Link
+                    </DropdownMenuItem>
+
                     {(canEdit || canDelete) && <DropdownMenuSeparator className="bg-white/10" />}
+
+                    {/* Visibility Toggle */}
+                    {canEdit && (
+                        <DropdownMenuItem
+                            onClick={handleToggleVisibility}
+                            className="cursor-pointer gap-2 text-muted-foreground hover:text-foreground"
+                        >
+                            {visibility === "public" ? (
+                                <>
+                                    <Lock className="h-4 w-4" />
+                                    Make Private
+                                </>
+                            ) : (
+                                <>
+                                    <Globe className="h-4 w-4" />
+                                    Make Public
+                                </>
+                            )}
+                        </DropdownMenuItem>
+                    )}
 
                     {/* Edit option */}
                     {canEdit && (

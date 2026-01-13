@@ -62,6 +62,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   let dbQuery = supabase
     .from("ideas")
     .select("*")
+    .eq('visibility', 'public') // Only show public ideas
     .limit(query.limit + 1);
 
   // Apply sorting based on sort option
@@ -173,6 +174,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       user_id: user.id,
       title: validatedData.title,
       description: validatedData.description,
+      visibility: 'private', // Default to private
     } as any)
     .select("*")
     .single();

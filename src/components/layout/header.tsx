@@ -24,7 +24,7 @@ export function Header() {
     // Check if current user is an admin
     useEffect(() => {
         if (user) {
-            checkIsAdmin().then(setIsAdmin);
+            checkIsAdmin().then((res) => setIsAdmin(res.isAdmin));
         } else {
             setIsAdmin(false);
         }

@@ -18,7 +18,12 @@ export default function ProfilePage() {
 
     useEffect(() => {
         if (user) {
-            checkIsAdmin().then(setIsAdmin);
+            checkIsAdmin().then((result) => {
+                if (result.error) {
+                    console.error("Admin check error:", result.error);
+                }
+                setIsAdmin(result.isAdmin);
+            });
         }
     }, [user]);
 

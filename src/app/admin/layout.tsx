@@ -15,10 +15,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             if (!user || !user.email) {
                 router.replace("/");
             } else {
-                checkIsAdmin().then((isAdmin) => {
-                    if (isAdmin) {
+                checkIsAdmin().then((res) => {
+                    if (res.isAdmin) {
                         setIsAuthorized(true);
                     } else {
+                        console.error("Admin verification failed:", res.error);
                         router.replace("/");
                     }
                 });

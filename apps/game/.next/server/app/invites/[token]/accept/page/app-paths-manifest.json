@@ -1,0 +1,3 @@
+{
+  "/invites/[token]/accept/page": "app/invites/[token]/accept/page.js"
+}

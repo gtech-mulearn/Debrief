@@ -1,0 +1,80 @@
+{
+  "node": {
+    "001f1bd6b1b941ab921a271cfb25953d421d24e12a": {
+      "workers": {
+        "app/game/[gameId]/page": {
+          "moduleId": 87995,
+          "async": false,
+          "exportedName": "checkIsAdmin",
+          "filename": "apps/game/src/app/actions/admin-actions.ts"
+        }
+      },
+      "layer": {
+        "app/game/[gameId]/page": "action-browser"
+      },
+      "exportedName": "checkIsAdmin",
+      "filename": "apps/game/src/app/actions/admin-actions.ts"
+    },
+    "60f9b640f99ec120bcc73f4954089ebe5edac02354": {
+      "workers": {
+        "app/game/[gameId]/page": {
+          "moduleId": 87995,
+          "async": false,
+          "exportedName": "createTeam",
+          "filename": "apps/game/src/app/actions/game-actions.ts"
+        }
+      },
+      "layer": {
+        "app/game/[gameId]/page": "action-browser"
+      },
+      "exportedName": "createTeam",
+      "filename": "apps/game/src/app/actions/game-actions.ts"
+    },
+    "783947e2bd01bdd67692ee64fbc381260478a18fb1": {
+      "workers": {
+        "app/game/[gameId]/page": {
+          "moduleId": 87995,
+          "async": false,
+          "exportedName": "submitDecision",
+          "filename": "apps/game/src/app/actions/game-actions.ts"
+        }
+      },
+      "layer": {
+        "app/game/[gameId]/page": "action-browser"
+      },
+      "exportedName": "submitDecision",
+      "filename": "apps/game/src/app/actions/game-actions.ts"
+    },
+    "40f7d502f1905578d7237e9191b177cd2c617686d6": {
+      "workers": {
+        "app/game/[gameId]/page": {
+          "moduleId": 87995,
+          "async": false,
+          "exportedName": "processRound",
+          "filename": "apps/game/src/app/actions/game-actions.ts"
+        }
+      },
+      "layer": {
+        "app/game/[gameId]/page": "action-browser"
+      },
+      "exportedName": "processRound",
+      "filename": "apps/game/src/app/actions/game-actions.ts"
+    },
+    "40d86802a7cfd4de90f6f204e55e140f6117a9b2c0": {
+      "workers": {
+        "app/game/[gameId]/page": {
+          "moduleId": 87995,
+          "async": false,
+          "exportedName": "startGame",
+          "filename": "apps/game/src/app/actions/game-actions.ts"
+        }
+      },
+      "layer": {
+        "app/game/[gameId]/page": "action-browser"
+      },
+      "exportedName": "startGame",
+      "filename": "apps/game/src/app/actions/game-actions.ts"
+    }
+  },
+  "edge": {}
+}

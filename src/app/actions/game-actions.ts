@@ -3,18 +3,13 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { calculateRoundResults } from '@/lib/simulation-game/engine'
-import { TOTAL_BUDGET_POOL, ADMIN_EMAILS, ROUND_DURATION_MS } from '@/lib/simulation-game/constants'
+import { TOTAL_BUDGET_POOL, ROUND_DURATION_MS } from '@/lib/simulation-game/constants'
 import { SimDecision, SimTeam } from '@/types/simulation'
+import { requireAdmin } from '@/lib/utils/admin'
 
 export async function createGame() {
     const supabase = await createServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !user.email) throw new Error("Unauthorized")
-
-    if (!ADMIN_EMAILS.includes(user.email)) {
-        throw new Error("Only admins can start a new game simulation.")
-    }
+    const user = await requireAdmin() // Auth & Admin Check
 
     const code = Math.random().toString(36).substring(2, 8).toUpperCase()
 
@@ -36,10 +31,7 @@ export async function createGame() {
 
 export async function startGame(gameId: string) {
     const supabase = await createServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !user.email) throw new Error("Unauthorized")
-    if (!ADMIN_EMAILS.includes(user.email)) throw new Error("Only admins can start")
+    await requireAdmin() // Auth & Admin Check
 
     const roundEndsAt = new Date(Date.now() + ROUND_DURATION_MS).toISOString()
 

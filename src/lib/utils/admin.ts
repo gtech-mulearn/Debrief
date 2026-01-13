@@ -4,16 +4,7 @@
  * Centralized admin check functions for consistent access control.
  */
 
-import { ADMIN_EMAILS } from "@/lib/simulation-game/constants";
 import { createServerClient } from "@/lib/supabase/server";
-
-/**
- * Check if an email belongs to an admin user
- */
-export function isAdmin(email: string | null | undefined): boolean {
-  if (!email) return false;
-  return ADMIN_EMAILS.includes(email);
-}
 
 /**
  * Server-side admin validation
@@ -28,7 +19,14 @@ export async function requireAdmin() {
     throw new Error("Unauthorized: Not authenticated");
   }
 
-  if (!isAdmin(user.email)) {
+  // Check DB
+  const { data } = await supabase
+    .from('app_admins')
+    .select('email')
+    .eq('email', user.email)
+    .single();
+
+  if (!data) {
     throw new Error("Forbidden: Admin access required");
   }
 
@@ -43,12 +41,21 @@ export async function getAdminStatus(): Promise<{ isAdmin: boolean; email: strin
   try {
     const supabase = await createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
-    
+
+    if (!user?.email) return { isAdmin: false, email: null };
+
+    const { data } = await supabase
+      .from('app_admins')
+      .select('email')
+      .eq('email', user.email)
+      .single();
+
     return {
-      isAdmin: isAdmin(user?.email),
-      email: user?.email ?? null
+      isAdmin: !!data,
+      email: user.email
     };
   } catch {
     return { isAdmin: false, email: null };
   }
 }
+

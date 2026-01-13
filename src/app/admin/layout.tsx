@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks";
-import { ADMIN_EMAILS } from "@/lib/simulation-game/constants";
+import { checkIsAdmin } from "@/app/actions/admin-actions";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -12,10 +12,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     useEffect(() => {
         if (!loading) {
-            if (!user || !user.email || !ADMIN_EMAILS.includes(user.email)) {
+            if (!user || !user.email) {
                 router.replace("/");
             } else {
-                setIsAuthorized(true);
+                checkIsAdmin().then((isAdmin) => {
+                    if (isAdmin) {
+                        setIsAuthorized(true);
+                    } else {
+                        router.replace("/");
+                    }
+                });
             }
         }
     }, [user, loading, router]);

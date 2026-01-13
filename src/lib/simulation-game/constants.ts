@@ -1,7 +1,6 @@
 import { ChannelConfig } from "@/types/simulation";
 
 //move these to env
-export const ADMIN_EMAILS = ["sachin@mulearn.org", "admin@debrief.com", "awindsr@gmail.com"]; // Replace with actual admin emails
 export const TOTAL_BUDGET_POOL = 15000000; // 1.5 Cr (Global Pool)
 export const MAX_ROUNDS = 6;
 export const ROUND_DURATION_MS = 150000; // 2.5 minutes

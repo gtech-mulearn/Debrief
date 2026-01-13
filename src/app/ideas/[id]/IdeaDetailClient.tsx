@@ -223,6 +223,7 @@ function IdeaDetail({
                             ideaId={idea.id}
                             ideaTitle={idea.title}
                             ideaDescription={idea.description}
+                            visibility={idea.visibility || "public"}
                             canEdit={canEdit}
                             canDelete={canManage}
                         />

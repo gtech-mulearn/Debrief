@@ -58,7 +58,7 @@ export default async function GamePage({ params }: { params: Promise<{ gameId: s
     // 2. Auth Check
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-        redirect('/auth/login?next=/game/' + gameId)
+        redirect(`/login?redirectTo=${encodeURIComponent(`/game/${gameId}`)}`)
     }
 
     // 3. Check if user is in a team

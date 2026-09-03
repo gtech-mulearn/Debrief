@@ -10,6 +10,7 @@ export interface SimGame {
   created_by: string;
   code: string;
   round_ends_at?: string; // ISO timestamp for when current round ends
+  is_published: boolean; // Admin-controlled: only published games are visible to players
 }
 
 export interface SimTeam {

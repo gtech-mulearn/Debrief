@@ -1,6 +1,6 @@
 'use server'
 
-import { createServerClient } from '@/lib/supabase/server'
+import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { calculateRoundResults } from '@/lib/simulation-game/engine'
 import { TOTAL_BUDGET_POOL, ROUND_DURATION_MS } from '@/lib/simulation-game/constants'
@@ -26,6 +26,35 @@ export async function createGame() {
         .single()
 
     if (error) throw new Error(error.message)
+    return data
+}
+
+/**
+ * Publish or unpublish a game.
+ *
+ * Only published games are visible to players — the RLS policy in
+ * 019_game_publish_toggle gates sim_games (and sim_teams through it) on this
+ * flag. Written through the service-role client, matching the model migration
+ * 017 settled on for admin mutations.
+ */
+export async function setGamePublished(gameId: string, isPublished: boolean) {
+    await requireAdmin() // Auth & Admin Check
+
+    const supabase = createAdminClient()
+
+    const { data, error } = await supabase
+        .from('sim_games')
+        .update({ is_published: isPublished })
+        .eq('id', gameId)
+        .select('id, code, is_published')
+        .single()
+
+    if (error) throw new Error(error.message)
+
+    revalidatePath('/game/admin')
+    revalidatePath(`/game/${gameId}`)
+    if (data?.code) revalidatePath(`/game/${data.code}`)
+
     return data
 }
 

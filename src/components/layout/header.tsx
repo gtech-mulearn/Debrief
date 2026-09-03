@@ -20,13 +20,23 @@ export function Header() {
     const { user } = useAuth();
     const [isAdmin, setIsAdmin] = useState(false);
 
-    // Check if current user is an admin
+    // Check if current user is an admin.
+    // Resolved asynchronously in both branches and guarded by `cancelled`, so a
+    // slow response for a previous user cannot overwrite the current one.
     useEffect(() => {
-        if (user) {
-            checkIsAdmin().then((res) => setIsAdmin(res.isAdmin));
-        } else {
-            setIsAdmin(false);
-        }
+        let cancelled = false;
+
+        const resolveAdmin = user
+            ? checkIsAdmin().then((res) => res.isAdmin)
+            : Promise.resolve(false);
+
+        resolveAdmin.then((value) => {
+            if (!cancelled) setIsAdmin(value);
+        });
+
+        return () => {
+            cancelled = true;
+        };
     }, [user]);
 
     return (

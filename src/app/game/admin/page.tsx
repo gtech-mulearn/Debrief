@@ -5,14 +5,16 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { createGame } from '@/app/actions/game-actions'
+import { createGame, setGamePublished } from '@/app/actions/game-actions'
 import { toast } from 'sonner'
-import { ShieldAlert, Rocket, Calendar, Search, Trophy, ExternalLink, Hash } from 'lucide-react'
+import { ShieldAlert, Rocket, Calendar, Trophy, ExternalLink, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { SimGame, SimTeam } from '@/types/simulation'
 import Leaderboard from '@/components/game/Leaderboard'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 
 interface GameWithTeams extends SimGame {
     sim_teams: SimTeam[]
@@ -24,6 +26,7 @@ export default function AdminGamePage() {
     const [games, setGames] = useState<GameWithTeams[]>([])
     const [filterDate, setFilterDate] = useState('')
     const [loading, setLoading] = useState(true)
+    const [publishing, setPublishing] = useState<string | null>(null)
 
     useEffect(() => {
         const fetchGames = async () => {
@@ -56,6 +59,23 @@ export default function AdminGamePage() {
             })
         } finally {
             setIsCreating(false)
+        }
+    }
+
+    const handleTogglePublish = async (gameId: string, next: boolean) => {
+        // Optimistic: flip locally, roll back if the server rejects it.
+        setPublishing(gameId)
+        setGames(prev => prev.map(g => g.id === gameId ? { ...g, is_published: next } : g))
+        try {
+            await setGamePublished(gameId, next)
+            toast.success(next ? 'Game is now visible to players' : 'Game hidden from players')
+        } catch (error) {
+            setGames(prev => prev.map(g => g.id === gameId ? { ...g, is_published: !next } : g))
+            toast.error('Could not change visibility', {
+                description: error instanceof Error ? error.message : 'Unknown error'
+            })
+        } finally {
+            setPublishing(null)
         }
     }
 
@@ -166,6 +186,30 @@ export default function AdminGamePage() {
                                                             <Leaderboard teams={game.sim_teams} gameId={game.id} isFacilitator={true} />
                                                         </DialogContent>
                                                     </Dialog>
+                                                </div>
+
+                                                {/* Visibility toggle */}
+                                                <div className="flex items-center justify-between gap-3 rounded-md border border-white/10 bg-black/20 px-3 py-2">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        {game.is_published ? (
+                                                            <Eye className="w-4 h-4 shrink-0 text-emerald-400" />
+                                                        ) : (
+                                                            <EyeOff className="w-4 h-4 shrink-0 text-muted-foreground" />
+                                                        )}
+                                                        <Label
+                                                            htmlFor={`publish-${game.id}`}
+                                                            className="text-xs font-medium cursor-pointer truncate"
+                                                        >
+                                                            {game.is_published ? 'Visible to players' : 'Hidden from players'}
+                                                        </Label>
+                                                    </div>
+                                                    <Switch
+                                                        id={`publish-${game.id}`}
+                                                        checked={game.is_published}
+                                                        disabled={publishing === game.id}
+                                                        onCheckedChange={(next) => handleTogglePublish(game.id, next)}
+                                                        aria-label={`Toggle player visibility for game ${game.code}`}
+                                                    />
                                                 </div>
 
                                                 {/* Winner Summary */}

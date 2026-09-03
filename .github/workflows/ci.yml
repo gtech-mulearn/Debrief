@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Non-blocking for now: the pre-existing codebase carries ~94 eslint
+      # errors (mostly no-explicit-any in lib/gamification and types/). Flip
+      # continue-on-error off once that backlog is cleared, so lint regressions
+      # start failing the build.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Build
+        run: npm run build
+        env:
+          # Build-time placeholders. The client reads these at module scope and
+          # throws when they are absent, so the build needs syntactically valid
+          # values; it never contacts Supabase.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder_anon_key
+          SUPABASE_SECRET_KEY: placeholder_service_key

@@ -13,6 +13,7 @@ Debrief is a platform designed to help founders and creators validate their star
 - **Pivot Tracking**: Document your journey and pivots publicly.
 - **Community Backing**: Get "backed" by other users to validate demand.
 - **Real-time Updates**: Live feedback and notifications.
+- **Growth Lab** (`/game`): A real-time growth-strategy simulation. Teams allocate budget across channels over six rounds and compete on efficiency. Admins create sessions and control which are visible to players.
 - **Dark, Cinematic UI**: A premium, focus-driven interface.
 
 ## 🛠️ Tech Stack
@@ -32,7 +33,7 @@ We welcome contributions! Follow these steps to set up the project locally.
 ### Prerequisites
 
 - Node.js 18+
-- Bun (recommended) or npm/yarn/pnpm
+- npm (the repo ships a package-lock.json)
 - A Supabase project (for local dev, you'll need the credentials)
 
 ### Installation
@@ -45,8 +46,7 @@ We welcome contributions! Follow these steps to set up the project locally.
 
 2.  **Install dependencies**
     ```bash
-    bun install
-    # or npm install
+    npm install
     ```
 
 3.  **Environment Setup**

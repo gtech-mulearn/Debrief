@@ -1,63 +1,62 @@
-import { createServerClient, createAdminClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/utils/admin';
+import { ValidationError, withErrorHandling } from '@/lib/api/errors';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-    try {
-        await requireAdmin(); // Auth Check (uses user context, respects new RLS)
-        const supabase = createAdminClient(); // Service Role (Bypasses RLS for listing)
+/**
+ * These handlers previously wrapped every failure in a 403, so a duplicate-key
+ * violation on insert was indistinguishable from a real permission failure.
+ * withErrorHandling preserves the distinction: requireAdmin throws 401/403,
+ * anything else surfaces as a 500 and is logged.
+ */
 
-        // Fetch all admins
-        const { data: admins, error } = await supabase
-            .from('app_admins')
-            .select('*')
-            .order('created_at', { ascending: false });
+export const GET = withErrorHandling(async () => {
+    await requireAdmin(); // Auth check (user context, respects RLS)
+    const supabase = createAdminClient(); // Service role (bypasses RLS for listing)
 
-        if (error) throw error;
+    const { data: admins, error } = await supabase
+        .from('app_admins')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-        return NextResponse.json(admins);
-    } catch (error) {
-        return NextResponse.json({ error: (error as Error).message }, { status: 403 });
+    if (error) throw error;
+
+    return NextResponse.json(admins);
+});
+
+export const POST = withErrorHandling(async (request: Request) => {
+    const creator = await requireAdmin();
+    const { email } = await request.json();
+
+    if (!email) {
+        throw new ValidationError({ email: ['Enter the email address to grant admin access to.'] });
     }
-}
 
-export async function POST(request: Request) {
-    try {
-        const creator = await requireAdmin();
-        const { email } = await request.json();
+    const supabase = createAdminClient();
+    const { error } = await supabase.from('app_admins').insert({
+        email,
+        created_by: creator.id
+    });
 
-        if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
+    if (error) throw error;
 
-        const supabase = createAdminClient();
-        const { error } = await supabase.from('app_admins').insert({
-            email,
-            created_by: creator.id
-        });
+    return NextResponse.json({ success: true });
+});
 
-        if (error) throw error;
+export const DELETE = withErrorHandling(async (request: Request) => {
+    await requireAdmin();
+    const { email } = await request.json();
 
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        return NextResponse.json({ error: (error as Error).message }, { status: 403 });
+    if (!email) {
+        throw new ValidationError({ email: ['Enter the email address to remove admin access from.'] });
     }
-}
 
-export async function DELETE(request: Request) {
-    try {
-        await requireAdmin();
-        const { email } = await request.json();
+    const supabase = createAdminClient();
+    const { error } = await supabase.from('app_admins').delete().eq('email', email);
 
-        if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
+    if (error) throw error;
 
-        const supabase = createAdminClient();
-        const { error } = await supabase.from('app_admins').delete().eq('email', email);
-
-        if (error) throw error;
-
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        return NextResponse.json({ error: (error as Error).message }, { status: 403 });
-    }
-}
+    return NextResponse.json({ success: true });
+});

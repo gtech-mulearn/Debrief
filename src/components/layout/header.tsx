@@ -10,7 +10,6 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { AuthButton } from "./auth-button";
-import { cn } from "@/lib/utils";
 import { Menu, X, Home, PlusCircle, Sparkles, BarChart3 } from "lucide-react";
 import { useAuth } from "@/hooks";
 import { checkIsAdmin } from "@/app/actions/admin-actions";

@@ -5,6 +5,7 @@
  */
 
 import { createServerClient } from "@/lib/supabase/server";
+import { ForbiddenError, UnauthorizedError } from "@/lib/api/errors";
 
 /**
  * Server-side admin validation
@@ -16,7 +17,7 @@ export async function requireAdmin() {
   const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error || !user) {
-    throw new Error("Unauthorized: Not authenticated");
+    throw new UnauthorizedError("You are not signed in, or your session expired.");
   }
 
   // Check DB
@@ -27,7 +28,7 @@ export async function requireAdmin() {
     .single();
 
   if (!data) {
-    throw new Error("Forbidden: Admin access required");
+    throw new ForbiddenError("This action requires an admin account.");
   }
 
   return user;

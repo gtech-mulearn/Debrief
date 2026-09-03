@@ -1,8 +1,18 @@
 /**
  * Supabase Auth Middleware
- * 
- * Refreshes the user's session on every request to keep it alive.
+ *
+ * Refreshes the user's session on every request and enforces route access.
  * This runs on the Edge runtime.
+ *
+ * Two rules keep the session alive, and breaking either one logs users out:
+ *
+ * 1. ONE client, ONE getUser() per request. Supabase rotates refresh tokens,
+ *    so a second refresh in the same request invalidates the token the first
+ *    one just issued.
+ * 2. EVERY response returned from here — redirects included — must carry the
+ *    cookies the client set. A bare NextResponse.redirect() drops them, the
+ *    browser keeps sending the consumed refresh token, and the session becomes
+ *    unrecoverable rather than merely stale.
  */
 
 import { createServerClient } from "@supabase/ssr";
@@ -21,50 +31,11 @@ function getSupabaseConfig() {
   return { url, key };
 }
 
-export async function updateSession(request: NextRequest) {
-  const config = getSupabaseConfig();
+// Routes that require authentication
+const protectedRoutes = ["/ideas/new", "/profile", "/admin", "/game/admin"];
 
-  // If no config, just pass through
-  if (!config) {
-    return NextResponse.next({ request });
-  }
-
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
-
-  const supabase = createServerClient(
-    config.url,
-    config.key,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  // Refresh session - important for keeping auth alive
-  // Do not remove this line
-  await supabase.auth.getUser();
-
-  return supabaseResponse;
-}
-
-// Protected routes that require authentication
-const protectedRoutes = ["/ideas/new", "/profile", "/admin"];
+// Routes that additionally require membership in app_admins
+const adminRoutes = ["/admin", "/game/admin"];
 
 // Auth routes that should redirect to home if already logged in
 const authRoutes = ["/login"];
@@ -77,70 +48,87 @@ export async function authMiddleware(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  const response = await updateSession(request);
-  const pathname = request.nextUrl.pathname;
+  let supabaseResponse = NextResponse.next({ request });
 
-  // Check if route needs protection
+  const supabase = createServerClient(config.url, config.key, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value)
+        );
+        supabaseResponse = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
+
+  /**
+   * Redirect while preserving any refreshed auth cookies.
+   *
+   * NextResponse.redirect() starts with empty headers, so the Set-Cookie
+   * headers written onto supabaseResponse have to be copied across by hand.
+   * Returning a redirect without this is what silently signs users out.
+   */
+  const redirectTo = (pathname: string, searchParams?: Record<string, string>) => {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    url.search = "";
+    if (searchParams) {
+      for (const [key, value] of Object.entries(searchParams)) {
+        url.searchParams.set(key, value);
+      }
+    }
+
+    const response = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie);
+    });
+    return response;
+  };
+
+  // Single session refresh for this request. Do not add a second getUser().
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   );
+  const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route));
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
-  if (isProtectedRoute || isAuthRoute) {
-    const supabase = createServerClient(
-      config.url,
-      config.key,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
-          setAll() { },
-        },
-      }
-    );
+  // Unauthenticated users cannot reach protected routes
+  if (isProtectedRoute && !user) {
+    return redirectTo("/login", { redirectTo: pathname });
+  }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    // Redirect unauthenticated users from protected routes
-    if (isProtectedRoute && !user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      url.searchParams.set("redirectTo", pathname);
-      return NextResponse.redirect(url);
+  // Role-based protection: admin routes require an app_admins record
+  if (isAdminRoute && user) {
+    if (!user.email) {
+      return redirectTo("/");
     }
 
-    // Role-based protection: Admin
-    if (pathname.startsWith("/admin") && user) {
-      if (!user.email) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/";
-        return NextResponse.redirect(url);
-      }
+    const { data } = await supabase
+      .from("app_admins")
+      .select("email")
+      .eq("email", user.email)
+      .maybeSingle();
 
-      // Verify against app_admins table
-      const { data } = await supabase
-        .from('app_admins')
-        .select('email')
-        .eq('email', user.email)
-        .single();
-
-      if (!data) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/"; // Redirect unauthorized access to home
-        return NextResponse.redirect(url);
-      }
-    }
-
-    // Redirect authenticated users from auth routes
-    if (isAuthRoute && user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
+    if (!data) {
+      return redirectTo("/");
     }
   }
 
-  return response;
+  // Authenticated users have no business on the login page
+  if (isAuthRoute && user) {
+    return redirectTo("/");
+  }
+
+  return supabaseResponse;
 }

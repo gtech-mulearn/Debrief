@@ -14,7 +14,9 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder files
      * - API routes that handle their own auth
+     * - auth/callback, which performs the PKCE code exchange and writes the
+     *   session cookies itself; refreshing alongside it races that write
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
